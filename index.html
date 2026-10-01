@@ -1,0 +1,572 @@
+<title>Ligne Avenir 1MCVA</title>
+<meta name="author" content="Marie Frison">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Overpass:wght@400;600;800&display=swap">
+<style>
+/* Layout : plan de métro. Bandeau (logo de ligne + chrono) / la ligne et ses 10 stations / quai = scène de l'activité + tableau des voyageurs (scores) en tickets. */
+:root{
+  --bg:#EEF2F8; --surface:#FFFFFF; --surface2:#F5F7FB; --ink:#0D1A3A; --muted:#55607C; --rule:#D3DAE8;
+  --line:#E4007C; --ticket:#FFC72C; --on-ticket:#0D1A3A; --blue:#1F5BD8; --green:#00A88F; --orange:#F28C00; --violet:#7B4BDB;
+  --go:#0E9F6E; --go-soft:#DCF5EC; --stop:#D83A3A; --stop-soft:#FBE3E3; --sc:var(--line);
+  --f-sign:"Big Shoulders Display","Arial Narrow","Impact",sans-serif;
+  --f-body:"Overpass","Segoe UI",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1226; --surface:#141D38; --surface2:#1B2546; --ink:#F1F4FB; --muted:#A9B3CF; --rule:#2C3860;
+  --line:#FF3D9A; --blue:#6E9BFF; --green:#2BD3B4; --orange:#FFA53D; --violet:#A98BFF;
+  --go:#38D39F; --go-soft:#123A33; --stop:#FF6B6B; --stop-soft:#3C1E2A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1226; --surface:#141D38; --surface2:#1B2546; --ink:#F1F4FB; --muted:#A9B3CF; --rule:#2C3860;
+  --line:#FF3D9A; --blue:#6E9BFF; --green:#2BD3B4; --orange:#FFA53D; --violet:#A98BFF;
+  --go:#38D39F; --go-soft:#123A33; --stop:#FF6B6B; --stop-soft:#3C1E2A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.5;padding-inline:16px;padding-block:0 32px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+h1,h2,h3{font-family:var(--f-sign);font-weight:900;text-wrap:balance;margin:0;line-height:.98;letter-spacing:.005em;text-transform:uppercase}
+.wrap{max-width:1320px;margin:0 auto}
+a{color:var(--blue);font-weight:700}
+
+/* Bandeau */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:18px 8px}
+.brand{display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;text-align:left}
+.roundel{width:60px;height:60px;border-radius:50%;background:var(--line);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-size:34px;font-weight:900;box-shadow:0 0 0 5px var(--surface),0 0 0 8px var(--line);flex:0 0 auto}
+.brand h1{font-size:clamp(32px,4.4vw,52px)}
+.brand small{display:block;color:var(--muted);font-size:14px;font-weight:600}
+.brand small b{color:var(--line)}
+.timer{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);border-radius:12px;padding:6px 8px 6px 16px}
+.timer .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;font-weight:800;line-height:1.1}
+.timer .t{font-family:var(--f-sign);font-weight:800;font-size:40px;font-variant-numeric:tabular-nums;min-width:3.4ch;color:var(--ticket);line-height:1}
+.timer.low .t{color:var(--orange)}
+.timer.done{animation:blink .5s 6}
+.timer.done .t{color:var(--stop)}
+@keyframes blink{50%{opacity:.4}}
+.icon-btn{border:0;background:rgba(255,255,255,.14);color:inherit;border-radius:8px;height:42px;min-width:42px;font-weight:800;font-size:18px}
+.icon-btn:hover{background:rgba(255,255,255,.25)}
+
+/* La ligne */
+.metro{overflow-x:auto;padding:10px 4px 6px;margin-bottom:14px;scrollbar-width:thin}
+.metro ol{list-style:none;margin:0;padding:0 10px;display:grid;grid-template-columns:repeat(10,minmax(98px,1fr));position:relative;min-width:980px}
+.metro ol::before{content:"";position:absolute;left:50px;right:50px;top:17px;height:10px;border-radius:5px;background:var(--rule)}
+.metro .fill{position:absolute;left:50px;top:17px;height:10px;border-radius:5px;background:var(--line);transition:width .7s cubic-bezier(.3,.9,.3,1.1)}
+.stn{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0 2px;text-align:center}
+.stn .dot{width:44px;height:44px;border-radius:50%;background:var(--surface);border:6px solid var(--rule);display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:18px;color:var(--muted);transition:transform .2s}
+.stn:hover .dot{transform:scale(1.12)}
+.stn b{font-size:13px;line-height:1.15;font-weight:800;max-width:13ch;overflow-wrap:anywhere;hyphens:auto}
+.stn em{font-style:normal;font-size:11px;color:var(--muted)}
+.stn.done .dot{border-color:var(--line);color:var(--line)}
+.stn.on .dot{background:var(--c);border-color:var(--surface);color:#fff;transform:scale(1.25);box-shadow:0 0 0 4px var(--c),0 8px 18px rgba(0,0,0,.25)}
+.stn.on b{color:var(--c)}
+
+/* Quai */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--surface);border-radius:22px;padding:clamp(18px,3vw,38px);min-width:0;border-top:14px solid var(--sc);box-shadow:0 12px 30px rgba(13,26,58,.10);animation:slide .5s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes slide{from{transform:translateX(28px);opacity:.3}}
+.st-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.sign{flex:0 0 auto;background:var(--ink);color:var(--bg);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:10px}
+.sign i{width:34px;height:34px;border-radius:50%;background:var(--sc);display:grid;place-items:center;color:#fff;font-style:normal;font-family:var(--f-sign);font-weight:900;font-size:20px}
+.sign span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+.stage h2{font-size:clamp(38px,5vw,64px);color:var(--ink)}
+.lead{font-size:19px;color:var(--muted);max-width:64ch;margin:12px 0 20px}
+.goal{display:inline-block;background:var(--ticket);color:var(--on-ticket);font-weight:800;font-size:15px;border-radius:6px;padding:4px 12px;margin-top:10px}
+
+.card{background:var(--surface2);border:2px solid var(--rule);border-radius:var(--r);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column;gap:18px}
+.q{font-family:var(--f-body);font-weight:800;font-size:clamp(23px,2.8vw,33px);line-height:1.22}
+.counter{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:0;background:var(--surface);border:2px solid var(--rule);border-radius:10px;padding:11px 20px;font-weight:800;transition:transform .08s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.ticket{background:var(--ticket);color:var(--on-ticket);border-color:var(--ticket);font-size:19px}
+.btn.line{background:var(--line);border-color:var(--line);color:#fff}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.35;cursor:default}
+.answer{border-radius:12px;padding:16px 20px;font-size:19px;animation:pop .45s cubic-bezier(.2,.9,.3,1.4)}
+.answer.ok{background:var(--go-soft);border:3px solid var(--go)}
+.answer.no{background:var(--stop-soft);border:3px solid var(--stop)}
+.answer strong{font-family:var(--f-sign);font-size:44px;font-weight:900;display:block;line-height:1}
+.answer.ok strong{color:var(--go)} .answer.no strong{color:var(--stop)}
+@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:none;opacity:1}}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:12px 16px;font-size:19px}
+.opt .k{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:22px;color:#fff}
+.opt:nth-child(1) .k{background:var(--blue)} .opt:nth-child(2) .k{background:var(--line)} .opt:nth-child(3) .k{background:var(--green)} .opt:nth-child(4) .k{background:var(--orange)}
+.opt.good{border-color:var(--go);background:var(--go-soft);animation:pop .45s}
+.opt.good::after{content:"✔";margin-left:auto;color:var(--go);font-size:28px;font-weight:800}
+.opt.bad{opacity:.35}
+.why{color:var(--muted);font-size:17px;margin:0}
+.src{font-size:13px;color:var(--muted);margin:0}
+
+/* Points */
+.award{border-top:2px dashed var(--rule);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.award-l{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--c);background:var(--surface);border-radius:999px;padding:6px 16px;font-weight:800;font-size:16px}
+.chip:hover{transform:scale(1.04)}
+.chip.on{background:var(--c);color:#fff}
+
+/* Boussole */
+.scale{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.scale{grid-template-columns:1fr}}
+.sc-btn{border:3px solid var(--rule);background:var(--surface);border-radius:14px;padding:16px 10px;font-weight:800;font-size:19px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sc-btn span{font-size:30px;line-height:1}
+.sc-btn:hover{border-color:var(--sc);transform:translateY(-3px)}
+.meter{height:12px;border-radius:6px;background:var(--rule);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--sc);transition:width .4s}
+.results{display:grid;gap:12px}
+.res{display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:12px;align-items:center}
+@media (max-width:560px){.res{grid-template-columns:110px minmax(0,1fr) 36px;font-size:15px}}
+.res .bar{height:22px;border-radius:6px;background:var(--rule);overflow:hidden}
+.res .bar i{display:block;height:100%;border-radius:6px;animation:growx .8s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes growx{from{width:0!important}}
+.res b{font-size:16px} .res em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.winner{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.wcard{border-radius:14px;padding:18px;border:3px solid var(--c);background:var(--surface);animation:pop .5s}
+.wcard .pill{display:inline-block;background:var(--c);color:#fff;border-radius:999px;padding:2px 12px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.wcard h3{font-size:34px;margin:8px 0 6px}
+.wcard p{margin:0 0 6px}
+
+/* Association */
+.turn{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 16px;font-weight:800}
+.turn .who{background:var(--c);color:#fff;border-radius:999px;padding:4px 14px}
+.match{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:14px}
+@media (max-width:700px){.match{grid-template-columns:1fr}}
+.col{display:grid;gap:8px;align-content:start}
+.mc{text-align:left;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.35;transition:transform .1s}
+.mc.f{font-family:var(--f-sign);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.01em}
+.mc:hover:not([disabled]){border-color:var(--ink)}
+.mc.sel{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue);transform:scale(1.02)}
+.mc.ok{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));opacity:.85}
+.mc.err{animation:shake .4s;border-color:var(--stop)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Calendrier */
+.cal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.cal{grid-template-columns:1fr}}
+.pool,.track{display:grid;gap:8px;align-content:start}
+.cc{text-align:left;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:17px;display:flex;gap:12px;align-items:center}
+.cc:hover:not([disabled]){border-color:var(--ink)}
+.cc[disabled]{opacity:.25}
+.track .cc{border-left:8px solid var(--sc)}
+.cc .n{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:18px}
+.cc.right{border-color:var(--go);background:var(--go-soft)}
+.cc.wrong{border-color:var(--stop);background:var(--stop-soft)}
+.slot{border:2px dashed var(--rule);border-radius:12px;padding:12px;color:var(--muted);font-size:15px}
+
+/* Duo de phrases */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+.say{border-radius:12px;padding:16px 18px;font-size:20px;font-weight:700}
+.say small{display:block;font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.say.bad{background:var(--stop-soft);border:3px solid var(--stop)} .say.bad small{color:var(--stop)}
+.say.good{background:var(--go-soft);border:3px solid var(--go);animation:pop .45s} .say.good small{color:var(--go)}
+.say.hide{background:transparent;color:var(--muted);font-weight:600;font-size:17px;display:grid;place-items:center;min-height:96px;border:3px dashed var(--rule)}
+
+/* Profils */
+.persona{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:560px){.persona{grid-template-columns:1fr}}
+.avatar{width:96px;height:96px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:44px}
+.persona h3{font-size:42px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.facts span{background:var(--surface);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;font-size:15px;font-weight:600}
+
+/* Scores */
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.side h3{font-size:30px}
+.board{display:flex;flex-direction:column;gap:10px}
+.tk{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--surface);border-radius:12px;padding:12px 14px 10px 18px;border-left:10px solid var(--c);box-shadow:0 4px 12px rgba(13,26,58,.08)}
+.tk::after{content:"";position:absolute;right:86px;top:8px;bottom:44px;border-right:2px dashed var(--rule)}
+.tk .nm{font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.tk .nm small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tk .pts{font-family:var(--f-sign);font-weight:900;font-size:40px;font-variant-numeric:tabular-nums;line-height:1;min-width:60px;text-align:center;color:var(--c)}
+.tk .pts.bump{animation:bump .6s cubic-bezier(.2,.9,.3,1.6)}
+@keyframes bump{40%{transform:scale(1.4)}}
+.tk.lead1{box-shadow:0 0 0 3px var(--ticket),0 6px 16px rgba(13,26,58,.15)}
+.adj{grid-column:1/-1;display:flex;gap:6px}
+.adj button{flex:1;border:0;background:var(--surface2);border-radius:6px;padding:2px 0;font-weight:800}
+.adj button:hover{background:var(--rule)}
+.note{font-size:14px;color:var(--muted);margin:0}
+.credit{font-size:14px;color:var(--muted);text-align:center;padding:12px;border:2px dashed var(--rule);border-radius:12px}
+.credit b{color:var(--ink)}
+
+.teams-edit{display:grid;gap:10px;max-width:580px}
+.team-in{display:flex;gap:10px;align-items:center}
+.team-in i{width:22px;height:22px;border-radius:50%;background:var(--c);flex:0 0 auto}
+.team-in input{flex:1;min-width:0;font:inherit;font-weight:800;border:2px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 14px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:24px}
+.rule{background:var(--surface2);border-radius:var(--r);padding:16px 18px;border-top:6px solid var(--c)}
+.rule b{font-family:var(--f-sign);font-weight:900;font-size:24px;text-transform:uppercase;display:block;margin-bottom:4px}
+
+/* Bilan */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:16px 0 28px;flex-wrap:wrap}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;width:160px}
+.pod .bar{width:100%;background:var(--c);border-radius:12px 12px 0 0;display:grid;place-items:start center;padding-top:10px;color:#fff;font-family:var(--f-sign);font-weight:900;font-size:44px;animation:grow .9s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes grow{from{height:0!important}}
+.pod b{text-align:center;overflow-wrap:anywhere}
+.road{display:grid;gap:8px}
+.road label{display:flex;gap:12px;align-items:center;background:var(--surface2);border:2px solid var(--rule);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600}
+.road label:has(input:checked){border-color:var(--go);background:var(--go-soft)}
+.road input{width:22px;height:22px;accent-color:var(--go)}
+.section{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+.section h3{font-size:32px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{background:var(--surface2);border:2px solid var(--rule);border-radius:10px;padding:8px 14px;text-decoration:none}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:18px;border-top:2px dashed var(--rule)}
+
+/* Accueil */
+.splash{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.splash-in{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.splash .board-sign{background:var(--ink);color:var(--bg);border-radius:18px;padding:22px clamp(18px,4vw,48px);display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 18px 40px rgba(13,26,58,.25)}
+.splash .dir{font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ticket)}
+.big{font-family:var(--f-sign);font-weight:900;font-size:clamp(64px,13vw,160px);line-height:.85;margin:0;text-transform:uppercase}
+.big span{display:inline-block;animation:drop .7s cubic-bezier(.2,.9,.3,1.3) backwards}
+.big .l2{color:var(--ticket)}
+@keyframes drop{from{transform:translateY(-50px);opacity:0}}
+.splash p.sub{font-size:clamp(18px,2.2vw,22px);color:var(--muted);max-width:56ch;margin:0}
+.by{display:flex;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--rule);border-radius:999px;padding:8px 20px 8px 8px}
+.by .av{width:42px;height:42px;border-radius:50%;background:var(--line);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:22px}
+.by span{font-size:15px;color:var(--muted);text-align:left;line-height:1.25}
+.by b{color:var(--ink);font-size:18px;display:block}
+.go-btn{font-family:var(--f-sign);font-weight:900;text-transform:uppercase;font-size:clamp(28px,3.6vw,40px);background:var(--line);color:#fff;border:0;border-radius:16px;padding:14px 40px;box-shadow:0 8px 0 color-mix(in srgb,var(--line) 60%,#000);animation:breathe 2.2s ease-in-out infinite}
+.go-btn:active{transform:translateY(6px);box-shadow:0 2px 0 color-mix(in srgb,var(--line) 60%,#000)}
+@keyframes breathe{50%{transform:scale(1.05)}}
+.mini-line{width:100%;overflow-x:auto}
+.mini-line ol{list-style:none;margin:0;padding:10px 0 0;display:grid;grid-template-columns:repeat(10,minmax(90px,1fr));position:relative;min-width:900px}
+.mini-line ol::before{content:"";position:absolute;left:45px;right:45px;top:20px;height:10px;border-radius:5px;background:var(--line)}
+.mini-line li{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:800;line-height:1.15}
+.mini-line li i{width:30px;height:30px;border-radius:50%;background:var(--surface);border:6px solid var(--line)}
+.mini-line li em{font-style:normal;font-weight:600;color:var(--muted);font-size:12px}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <button class="brand" id="home" aria-label="Revenir à l'écran d'accueil"><span class="roundel" aria-hidden="true">A</span><span><span style="display:block" class="h1wrap"><h1>Ligne Avenir</h1></span><small>Orientation &amp; Parcoursup · 1MCVA · par <b>Marie Frison</b></small></span></button>
+    <div class="timer" id="timer" aria-live="polite">
+      <span class="lbl">Prochain<br>départ</span>
+      <span class="t" id="tval">00:00</span>
+      <button class="icon-btn" id="tplay" aria-label="Lancer le chrono">▶</button>
+      <button class="icon-btn" id="treset" aria-label="Remettre le chrono à la durée de l'activité">↺</button>
+    </div>
+  </header>
+  <nav class="metro" aria-label="Stations du jeu"><ol id="steps"></ol></nav>
+  <div class="main">
+    <main class="stage" id="stage"></main>
+    <aside class="side">
+      <h3>Les voyageurs</h3>
+      <div class="board" id="board"></div>
+      <p class="note">Les points se gagnent dans chaque station. −1 / +1 / +2 pour les bonus (participation, entraide, bonne idée).</p>
+      <div class="credit">Jeu conçu par <b>Marie Frison</b><br>Bac Pro MCV · 1MCVA</div>
+    </aside>
+  </div>
+</div>
+
+<div class="splash" id="splash" hidden>
+  <div class="splash-in">
+    <div class="board-sign">
+      <span class="dir">Direction · Terminale et après-bac</span>
+      <h2 class="big"><span style="animation-delay:.05s">Ligne</span> <span class="l2" style="animation-delay:.25s">Avenir</span></h2>
+    </div>
+    <p class="sub">Un voyage d'une heure en équipes pour découvrir ce qu'on peut faire après le bac pro MCV, comprendre Parcoursup et commencer à construire son projet dès la 1re.</p>
+    <div class="by"><span class="av" aria-hidden="true">MF</span><span>Un jeu conçu par<b>Marie Frison</b></span></div>
+    <button class="go-btn" id="startgame">Monter à bord</button>
+    <div class="mini-line"><ol id="map"></ol></div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+const COL=["#1F5BD8","#E4007C","#00A88F","#F28C00","#7B4BDB","#0A8FB8"];
+const STATIONS=[
+ {id:"prep",t:"Embarquement",min:2,c:"#E4007C"},
+ {id:"bous",t:"Ma boussole",min:6,c:"#1F5BD8"},
+ {id:"vf",t:"Vrai ou faux Parcoursup",min:8,c:"#E4007C"},
+ {id:"mem",t:"Qui fait quoi ?",min:8,c:"#00A88F"},
+ {id:"cal",t:"Le bon calendrier",min:5,c:"#F28C00"},
+ {id:"itw",t:"Interview croisée",min:7,c:"#0A8FB8"},
+ {id:"pers",t:"Conseiller d'orientation",min:8,c:"#7B4BDB"},
+ {id:"dos",t:"Dossier qui claque",min:7,c:"#1F5BD8"},
+ {id:"rep",t:"Et si… ?",min:5,c:"#00A88F"},
+ {id:"bilan",t:"Terminus : ma feuille de route",min:4,c:"#F28C00"}
+];
+/* Boussole : M magasin, N négo, T technique, I international, G gestion, E action rapide */
+const PROF={
+ M:{n:"Manager de magasin",c:"#E4007C",p:"BTS MCO (Management commercial opérationnel)",m:"Manager de rayon, adjoint(e) de magasin, responsable de boutique",d:"Tu aimes le magasin, les rayons qui donnent envie et tu te vois diriger une équipe. C'est la suite logique de l'option A."},
+ N:{n:"Négociateur",c:"#1F5BD8",p:"BTS NDRC (Négociation et digitalisation de la relation client)",m:"Commercial(e), conseiller(ère) clientèle, chargé(e) de clientèle e-commerce",d:"Convaincre, prospecter, parler au téléphone ou sur les réseaux : tu aimes aller chercher le client."},
+ T:{n:"Conseiller technique",c:"#00A88F",p:"BTS CCST (Conseil et commercialisation de solutions techniques)",m:"Technico-commercial(e), vendeur(se) conseil en matériel pro",d:"Tu aimes comprendre comment marchent les produits et les expliquer, y compris à des professionnels."},
+ I:{n:"Globe-trotter",c:"#F28C00",p:"BTS Commerce international",m:"Assistant(e) import-export, commercial(e) à l'international",d:"Les langues et les autres cultures te plaisent. Le commerce peut se faire sans frontières."},
+ G:{n:"Organisateur",c:"#7B4BDB",p:"BTS GPME (Gestion de la PME)",m:"Assistant(e) de gestion, bras droit d'un dirigeant de petite entreprise",d:"Tableaux, organisation, suivi des clients et fournisseurs : tu aimes que tout soit carré."},
+ E:{n:"Pressé d'agir",c:"#0A8FB8",p:"BTS en apprentissage, certificat de spécialisation ou emploi direct",m:"Employé(e) de commerce, vendeur(se) conseil, puis évolution avec l'expérience",d:"Tu apprends en faisant et tu veux un salaire vite. L'alternance permet d'étudier tout en étant payé(e)."}
+};
+const BQ=[
+ {q:"J'aime aménager un rayon et rendre un magasin attractif.",k:["M"]},
+ {q:"Convaincre quelqu'un, ça me motive.",k:["N"]},
+ {q:"Je veux gagner un salaire le plus vite possible.",k:["E"]},
+ {q:"Je me débrouille en anglais (ou dans une autre langue) et j'aimerais voyager.",k:["I"]},
+ {q:"J'aime comprendre comment fonctionne un produit technique : outil, appareil, matériel.",k:["T"]},
+ {q:"Organiser, classer, remplir des tableaux, ça ne me dérange pas.",k:["G"]},
+ {q:"Je me vois encadrer une équipe un jour.",k:["M"]},
+ {q:"Je suis à l'aise au téléphone et sur les réseaux sociaux.",k:["N"]},
+ {q:"J'apprends mieux en faisant qu'en restant assis(e) en classe.",k:["E"]},
+ {q:"Les chiffres ne me font pas peur : ventes, stocks, objectifs.",k:["M","G"]},
+ {q:"Découvrir d'autres cultures me plaît.",k:["I"]},
+ {q:"Conseiller un client professionnel (artisan, entreprise) ne m'impressionne pas.",k:["T","N"]}
+];
+const VF=[
+ {q:"Sur Parcoursup, je peux faire jusqu'à 10 vœux, plus 10 vœux en apprentissage.",a:true,w:"En 2026 : 10 vœux en formation initiale (avec 20 sous-vœux maximum) et jusqu'à 10 vœux en apprentissage en plus."},
+ {q:"Le BTS, c'est surtout pour les bacheliers généraux.",a:false,w:"Faux ! Chaque BTS réserve un nombre de places prioritaires aux bacheliers professionnels. En 2025, plus de 70 % des bacheliers pro ont reçu au moins une proposition en BTS."},
+ {q:"Un avis favorable du conseil de classe augmente fortement mes chances d'entrer en BTS.",a:true,w:"Donné au 2e trimestre de terminale. En 2025, 90,8 % des lycéens pro qui l'avaient reçu ont obtenu une proposition d'admission."},
+ {q:"Je dois classer mes vœux par ordre de préférence.",a:false,w:"Les vœux ne sont pas classés. Chaque formation examine ton dossier sans savoir quels sont tes autres choix."},
+ {q:"Le même texte de motivation peut servir pour toutes les formations.",a:false,w:"Il faut écrire un « projet de formation motivé » pour chaque vœu. Les formations repèrent vite les copier-coller."},
+ {q:"Mes notes de 1re ne compteront pas pour Parcoursup.",a:false,w:"Les bulletins de 1re font partie de ton dossier, avec ceux de terminale. Ça se joue donc dès cette année !"},
+ {q:"En apprentissage, je suis payé(e) pendant ma formation.",a:true,w:"L'apprenti(e) signe un contrat de travail avec une entreprise : il ou elle est salarié(e) et touche un salaire."},
+ {q:"Un vœu en apprentissage ne se concrétise que si je trouve une entreprise qui signe un contrat avec moi.",a:true,w:"La formation peut t'accepter, mais il faut aussi un employeur. Le CFA peut t'aider à chercher."},
+ {q:"Si je n'ai que des réponses « en attente » début juin, c'est perdu.",a:false,w:"Les listes d'attente bougent tous les jours, car d'autres candidats libèrent des places. Et il reste la phase complémentaire."},
+ {q:"Ce que j'ai fait en PFMP peut compter dans mon dossier.",a:true,w:"Tes missions de stage, tes appréciations et ce que tu en as appris montrent ton projet. Garde-en une trace dès maintenant."},
+ {q:"Parcoursup, c'est seulement pour aller à l'université.",a:false,w:"Les BTS, les formations en apprentissage, les classes passerelles et beaucoup d'autres formations passent aussi par Parcoursup."},
+ {q:"On peut préparer un BTS du commerce en alternance.",a:true,w:"Les BTS MCO, NDRC, GPME ou CCST existent aussi en apprentissage, dans des CFA ou des lycées."},
+ {q:"Après un BTS, les études s'arrêtent forcément.",a:false,w:"Le BTS permet d'entrer dans la vie active, mais aussi de continuer vers un bac+3 (licence professionnelle, bachelor)."},
+ {q:"Pour mes vœux en BTS, mes professeurs donnent un avis sur ma capacité à réussir.",a:true,w:"C'est l'avis du conseil de classe du 2e trimestre de terminale. D'où l'intérêt d'être sérieux et régulier dès maintenant."}
+];
+const MEM=[
+ {f:"BTS MCO",d:"2 ans pour apprendre à gérer un magasin ou un rayon : équipe, stocks, chiffre d'affaires."},
+ {f:"BTS NDRC",d:"2 ans pour devenir commercial : prospecter, négocier, suivre les clients en face à face, au téléphone et sur le web."},
+ {f:"BTS CCST",d:"2 ans pour vendre des produits techniques (matériaux, équipements) en conseillant des clients professionnels."},
+ {f:"BTS Commerce international",d:"2 ans pour acheter et vendre à l'étranger : langues vivantes, import-export, transport des marchandises."},
+ {f:"BTS GPME",d:"2 ans pour devenir le bras droit du dirigeant d'une petite entreprise : gestion, clients, fournisseurs, administratif."},
+ {f:"Classe passerelle",d:"1 an de préparation pour les bacheliers pro qui ont un avis favorable mais pas de place en BTS, avant d'y entrer."},
+ {f:"Apprentissage",d:"Une formation qui alterne cours et entreprise, avec un contrat de travail et un salaire."},
+ {f:"Emploi direct",d:"Entrer dans la vie active dès le bac, puis évoluer avec l'expérience ou reprendre une formation plus tard."}
+];
+const MEM2=[
+ {f:"Manager de rayon",d:"Il ou elle anime une équipe, suit le chiffre d'affaires du rayon et organise la mise en rayon."},
+ {f:"Commercial(e) terrain",d:"Il ou elle se déplace chez les clients, prospecte de nouveaux clients et négocie des contrats."},
+ {f:"Technico-commercial(e)",d:"Il ou elle vend du matériel ou des solutions techniques à des professionnels en expliquant leur fonctionnement."},
+ {f:"Assistant(e) import-export",d:"Il ou elle gère les commandes avec des clients ou fournisseurs étrangers, souvent en anglais."},
+ {f:"Conseiller(ère) clientèle à distance",d:"Il ou elle répond aux clients par téléphone, chat ou mail et trouve des solutions à leurs demandes."},
+ {f:"Visual merchandiser",d:"Il ou elle crée les vitrines et la mise en scène des produits pour donner envie d'entrer et d'acheter."},
+ {f:"Chargé(e) d'e-commerce",d:"Il ou elle fait vivre la boutique en ligne : fiches produits, promotions, suivi des commandes."},
+ {f:"Adjoint(e) de direction de magasin",d:"Il ou elle seconde le directeur : plannings, gestion des stocks, résultats du magasin."}
+];
+const ITW=["Quel métier te faisait rêver quand tu étais petit(e) ? Et aujourd'hui ?","Qu'est-ce que tu as préféré faire en PFMP ?","Dans 5 ans, tu te vois où, en train de faire quoi ?","Plutôt études à temps plein ou alternance ? Pourquoi ?","Quel point fort pourrais-tu mettre en avant dans ton dossier ?","Qu'est-ce qui te fait peur dans l'après-bac ?","Qui peut t'aider dans ton orientation ?","Quelle entreprise ou enseigne aimerais-tu rejoindre ?","Préfères-tu rester près de chez toi ou partir ailleurs ?","Quelle matière ou activité te donne de l'énergie ?","Quel métier du commerce aimerais-tu découvrir ?","Si tu avais un an pour faire ce que tu veux, que ferais-tu ?","Qu'est-ce qu'un bon patron, pour toi ?","Quelle est ta plus grande fierté de cette année ?"];
+const CAL=[
+ "Décembre : le site Parcoursup ouvre, je découvre les formations",
+ "De mi-janvier à mi-mars : je m'inscris et je formule mes vœux",
+ "Mars : le conseil de classe du 2e trimestre donne son avis (fiche Avenir)",
+ "Début avril : dernier délai pour compléter mon dossier et confirmer mes vœux",
+ "Début juin : je reçois les réponses et je réponds dans les délais",
+ "À partir de mi-juin : phase complémentaire si je n'ai pas de place",
+ "Juillet : j'ai mon bac et je m'inscris administrativement dans ma formation"
+];
+const PERS=[
+ {n:"Inès",i:"I",f:["Adore faire des vitrines","Fiable en PFMP","Veut devenir manager"],q:"Inès a été félicitée en PFMP pour la mise en valeur de son rayon. Elle se voit diriger un magasin un jour.",a:"BTS MCO, en formation initiale ou en apprentissage.",w:"Son goût pour l'espace de vente et le management colle à l'option A. Conseil : qu'elle décrive son rayon de PFMP dans son projet motivé."},
+ {n:"Yanis",i:"Y",f:["Très à l'aise à l'oral","Veut gagner sa vie vite","Décroche en classe"],q:"Yanis convainc tout le monde, adore le téléphone et veut un salaire rapidement. Rester 30 heures par semaine en classe le fatigue.",a:"BTS NDRC en apprentissage.",w:"Il garde la poursuite d'études et l'objectif BTS, mais apprend en entreprise et touche un salaire. Il doit commencer à chercher une entreprise tôt."},
+ {n:"Léa",i:"L",f:["Fan de bricolage","Aime expliquer","PFMP dans un magasin de matériaux"],q:"En PFMP chez un négociant en matériaux, Léa adorait conseiller les artisans sur les produits.",a:"BTS CCST.",w:"Il forme à la vente de solutions techniques à des professionnels : exactement ce qu'elle a aimé en PFMP."},
+ {n:"Moussa",i:"M",f:["Bon en anglais","Parle aussi wolof","Rêve de voyager"],q:"Moussa a de bonnes notes en anglais et voudrait travailler avec d'autres pays.",a:"BTS Commerce international.",w:"Les langues pèsent lourd dans ce BTS. Conseil : continuer à travailler l'anglais et la deuxième langue dès maintenant."},
+ {n:"Chloé",i:"C",f:["Proposition d'embauche","Veut être autonome","Pas envie de longues études"],q:"Le magasin où Chloé a fait sa PFMP veut l'embaucher après le bac.",a:"Emploi direct, ou une formation courte en alternance.",w:"C'est un vrai choix ! Elle peut évoluer en interne et reprendre une formation plus tard (alternance, formation continue)."},
+ {n:"Kevin",i:"K",f:["Avis favorable","Pas de place en BTS en juin","Motivé"],q:"Kevin a eu un avis favorable du conseil de classe, mais n'a reçu que des « Non » et des « En attente » en BTS.",a:"Attendre les listes, faire la phase complémentaire, et viser une classe passerelle.",w:"La classe passerelle prépare pendant un an à entrer en BTS. Il peut aussi demander l'aide de son lycée et de la commission d'accès."},
+ {n:"Nathan",i:"N",f:["Gère l'Instagram de son club","À l'aise au téléphone","Aime les objectifs"],q:"Nathan anime déjà la page Instagram de son club de foot et adore relever des défis chiffrés.",a:"BTS NDRC.",w:"Ce BTS mêle négociation et relation client digitale (réseaux sociaux, web). Il peut citer son expérience avec le club dans son dossier."},
+ {n:"Emma",i:"E",f:["Ne sait pas quoi faire","Bonne élève","Stressée par Parcoursup"],q:"Emma a de bons résultats mais aucune idée de ce qu'elle veut faire. Parcoursup l'angoisse.",a:"Explorer avant de choisir : immersions, portes ouvertes, rendez-vous avec le ou la PsyEN.",w:"Ne pas savoir en 1re, c'est normal. Elle a une année pour tester. En terminale, elle pourra faire plusieurs vœux variés mais cohérents."},
+ {n:"Rayan",i:"R",f:["Fan de sneakers","Veut ouvrir sa boutique","Débrouillard"],q:"Rayan rêve d'ouvrir sa propre boutique de sneakers un jour.",a:"BTS MCO ou BTS GPME, puis de l'expérience avant de se lancer.",w:"Gérer un magasin et une petite entreprise, c'est ce qu'il lui faudra savoir faire. Il pourra se former à la création d'entreprise plus tard."},
+ {n:"Sarah",i:"S",f:["Très organisée","Aime l'administratif","Moins à l'aise en vente"],q:"Sarah adore organiser, faire des tableaux, gérer des plannings. Vendre en face à face la stresse un peu.",a:"BTS GPME.",w:"Polyvalent et tourné vers la gestion, il valorise son sens de l'organisation."}
+];
+const DOS=[
+ {k:"Projet motivé",b:"Je veux faire ce BTS parce que je ne sais pas quoi faire d'autre.",g:"Mes PFMP en magasin m'ont donné envie d'évoluer vers la gestion d'un rayon : votre BTS MCO est l'étape suivante de mon projet.",w:"On montre un projet, pas un choix par défaut."},
+ {k:"Projet motivé",b:"Je suis très motivé(e).",g:"En PFMP, j'ai pris en charge le réassort du rayon frais en autonomie pendant deux semaines.",w:"La motivation se prouve avec un exemple concret."},
+ {k:"Projet motivé",b:"J'aime le commerce.",g:"J'aime le contact client : en période de soldes, j'ai conseillé et encaissé jusqu'à 40 clients par jour.",w:"Des faits et des chiffres rendent la phrase crédible."},
+ {k:"Projet motivé",b:"Votre formation a l'air bien.",g:"Lors de vos portes ouvertes, j'ai découvert que vos étudiants préparent un projet avec une enseigne locale : c'est ce qui m'attire.",w:"Montrer qu'on s'est renseigné sur cette formation précise."},
+ {k:"Projet motivé",b:"J'ai fait mon stage dans un magasin.",g:"Pendant ma PFMP dans un magasin de sport, j'ai préparé et animé une opération commerciale sur les chaussures de running.",w:"On précise le lieu, la mission et ce qu'on a fait soi-même."},
+ {k:"Projet motivé",b:"Je suis sérieux(se).",g:"Je n'ai eu aucune absence en PFMP et mon tuteur m'a confié la caisse en autonomie dès la deuxième semaine.",w:"Le sérieux se montre par des faits que le jury peut vérifier."},
+ {k:"Transforme en atout",b:"Je garde mes petits frères le soir.",g:"Je suis responsable et je sais gérer plusieurs tâches à la fois.",w:"Une expérience de la vie quotidienne devient une soft skill."},
+ {k:"Transforme en atout",b:"Je fais du foot en club depuis 6 ans.",g:"J'ai l'esprit d'équipe et de la persévérance : je m'entraîne deux fois par semaine depuis 6 ans.",w:"La régularité dans un loisir prouve l'engagement."},
+ {k:"Transforme en atout",b:"J'aide mes parents au marché le samedi.",g:"J'ai déjà une expérience de la vente : accueil, encaissement et mise en avant des produits.",w:"Une expérience familiale reste une vraie expérience commerciale."},
+ {k:"Transforme en atout",b:"Je suis délégué(e) de classe.",g:"Je sais prendre la parole devant un groupe et représenter les autres.",w:"Un rôle au lycée montre la confiance en soi et le sens des responsabilités."},
+ {k:"Transforme en atout",b:"Je joue en ligne avec des amis.",g:"Je coordonne une équipe de 5 joueurs en ligne : communication rapide, stratégie et esprit d'équipe.",w:"Même un loisir numérique développe des soft skills, à condition de bien les nommer."},
+ {k:"Transforme en atout",b:"Je donne un coup de main dans une association.",g:"J'accueille le public d'une association d'aide alimentaire : écoute, patience et respect de chacun.",w:"Le bénévolat montre l'engagement et le sens du service, très apprécié dans le commerce."},
+ {k:"À toi !",b:"Écris ta propre phrase forte sur une feuille : ton projet ou une de tes expériences.",g:"Deux ou trois volontaires la lisent à voix haute. La classe dit ce qui la rend forte : un fait précis, un chiffre, un lien avec la formation ?",w:"Garde cette phrase : elle sera le début de ton projet de formation motivé en terminale."}
+];
+const REP=[
+ {q:"Début juin, tu reçois un « Oui » pour un BTS et un « En attente » pour un autre BTS que tu préfères.",o:["Tu refuses le « Oui » pour garder toutes tes chances sur l'autre.","Tu acceptes le « Oui » et tu maintiens le vœu « En attente » que tu préfères.","Tu ne réponds pas tout de suite, tu as le temps."],c:1,w:"Tu sécurises une place et tu gardes ta chance sur ton vœu préféré. Si une place s'y libère, tu pourras changer."},
+ {q:"Tu oublies de répondre à une proposition avant la date limite.",o:["La formation garde ta place quand même.","Ta proposition est perdue, la place passe à quelqu'un d'autre.","Parcoursup répond automatiquement « Oui » pour toi."],c:1,w:"Les délais sont stricts. Active les notifications de l'application Parcoursup et vérifie tes mails."},
+ {q:"Tu n'as reçu que des « Non ».",o:["Tu participes à la phase complémentaire et tu demandes de l'aide à ton lycée.","Tu abandonnes l'idée de faire des études.","Tu attends l'année prochaine sans rien faire."],c:0,w:"La phase complémentaire propose les places encore libres. Tu peux aussi demander l'accompagnement de la commission d'accès à l'enseignement supérieur (CAES)."},
+ {q:"Un BTS en apprentissage t'accepte, mais tu n'as pas encore d'entreprise.",o:["Tu attends que l'entreprise vienne te chercher.","Tu cherches activement une entreprise : CV, candidatures, aide du CFA.","Tu considères que tu es inscrit(e) sans contrat."],c:1,w:"Pas de contrat, pas d'apprentissage. Commence à chercher tôt : salons de l'apprentissage, réseau de tes PFMP, aide du CFA."},
+ {q:"Tu reçois un « Oui » pour un BTS situé loin de chez toi.",o:["Tu refuses tout de suite, c'est trop loin.","Tu te renseignes sur le logement, le transport et les aides (bourse, CROUS) avant de décider.","Tu ne réponds pas et tu verras plus tard."],c:1,w:"Des aides existent pour le logement et les études. Prends le temps de te renseigner, mais respecte le délai de réponse."},
+ {q:"En mars, tu hésites encore entre alternance et études à temps plein.",o:["Tu dois choisir l'un des deux avant de faire tes vœux.","Tu peux faire des vœux dans les deux : formation initiale et apprentissage.","Tu attends la phase complémentaire pour décider."],c:1,w:"Parcoursup permet des vœux en formation initiale et des vœux en apprentissage. Tu choisiras quand les réponses arriveront."},
+ {q:"Tu reçois un « Oui » pour ta formation préférée, celle dont tu rêvais.",o:["Tu l'acceptes définitivement.","Tu gardes tous tes autres vœux en attente au cas où.","Tu attends la fin de l'été pour répondre."],c:0,w:"Quand c'est ton premier choix, tu peux accepter définitivement. Tu libères ainsi des places pour les autres candidats."},
+ {q:"Tu acceptes définitivement une formation.",o:["Tes autres vœux restent ouverts au cas où.","Tes autres vœux sont abandonnés et tu fais ton inscription administrative.","Tu dois recommencer tes vœux à zéro."],c:1,w:"Accepter définitivement, c'est choisir. Il reste à t'inscrire dans l'établissement selon ses consignes."}
+];
+const ROAD=["Explorer les formations sur Parcoursup et sur l'Onisep","Aller à au moins 2 journées portes ouvertes","Faire une journée d'immersion dans un BTS","Prendre rendez-vous avec le ou la psychologue de l'Éducation nationale (PsyEN)","Noter mes missions et réussites de PFMP dans un carnet","Soigner mes bulletins dès la 1re : ils seront dans mon dossier","Repérer 2 ou 3 entreprises pour une éventuelle alternance"];
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const DECKS=[MEM,MEM2];
+function newMem(r){return {perm:shuffle(DECKS[r].map((_,i)=>i)),done:{},turn:0,a:null,b:null}}
+function blank(){return {teams:["Ligne 1","Ligne 2","Ligne 3","Ligne 4"].map(n=>({name:n,score:0})),st:0,done:{},idx:{vf:0,pers:0,dos:0,rep:0},rev:{},aw:{},bq:0,bans:[],mr:0,mems:[newMem(0),newMem(1)],cal:{perm:shuffle(CAL.map((_,i)=>i)),picked:[],checked:false},road:{},started:0,itw:[]}}
+let S;
+function save(){try{localStorage.setItem("ligneavenir1mcva_v2",JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem("ligneavenir1mcva_v2");if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return null}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+
+/* Chrono */
+let tLeft=0,tRun=null,ac=null;
+function setTimer(sec,start){clearInterval(tRun);tRun=null;tLeft=sec;$("#timer").classList.remove("done");drawT();if(start)play()}
+function drawT(){$("#tval").textContent=fmt(tLeft);$("#tplay").textContent=tRun?"⏸":"▶";$("#tplay").setAttribute("aria-label",tRun?"Mettre en pause":"Lancer le chrono");$("#timer").classList.toggle("low",tRun!=null&&tLeft<=10&&tLeft>0);if(tRun&&tLeft<=5&&tLeft>0)tone(660,0,.06,"square",.05)}
+function play(){ensureAudio();if(tRun){clearInterval(tRun);tRun=null;drawT();return}if(tLeft<=0)return;tRun=setInterval(()=>{tLeft--;if(tLeft<=0){tLeft=0;clearInterval(tRun);tRun=null;$("#timer").classList.add("done");buzz()}drawT()},1000);drawT()}
+$("#tplay").onclick=play;$("#treset").onclick=()=>setTimer(STATIONS[S.st].min*60);
+
+/* Scores */
+function drawBoard(bi){const top=Math.max(...S.teams.map(t=>t.score));
+ $("#board").innerHTML=S.teams.map((t,i)=>`<div class="tk ${t.score===top&&top>0?"lead1":""}" style="--c:${COL[i]}"><span class="nm"><small>${t.score===top&&top>0?"En tête":"Voyageurs"}</small>${esc(t.name)}</span><span class="pts ${bi===i?"bump":""}">${t.score}</span><div class="adj"><button data-adj="${i}|-1" aria-label="Retirer un point">−1</button><button data-adj="${i}|1" aria-label="Ajouter un point">+1</button><button data-adj="${i}|2" aria-label="Ajouter deux points">+2</button></div></div>`).join("")}
+function addPts(i,p){S.teams[i].score+=p;save();drawBoard(i)}
+function awardHTML(key,label,pts){return `<div class="award"><span class="award-l">${label}</span><div class="chips">${S.teams.map((t,i)=>{const k=key+"|"+i;return `<button class="chip ${S.aw[k]!=null?"on":""}" style="--c:${COL[i]}" data-aw="${k}" data-i="${i}" data-pts="${pts}">${esc(t.name)}${S.aw[k]!=null?" +"+S.aw[k]:""}</button>`}).join("")}</div></div>`}
+
+/* Navigation */
+function drawSteps(){const n=STATIONS.length;
+ $("#steps").innerHTML=`<span class="fill" style="width:calc((100% - 100px) * ${S.st/(n-1)})"></span>`+STATIONS.map((s,i)=>`<li><button class="stn ${i===S.st?"on":""} ${(S.done[i]||i<S.st)&&i!==S.st?"done":""}" style="--c:${s.c}" data-go="${i}" aria-current="${i===S.st?"step":"false"}"><span class="dot">${(S.done[i]||i<S.st)&&i!==S.st?"✓":i}</span><b>${s.t}</b><em>${s.min} min</em></button></li>`).join("");
+ $("#steps").style.gridTemplateColumns=`repeat(${n},minmax(112px,1fr))`}
+function go(i){if(i!==S.st)S.done[S.st]=true;S.st=i;save();drawSteps();render();setTimer(STATIONS[i].min*60);chime();const sg=$("#stage");sg.style.animation="none";sg.offsetWidth;sg.style.animation="";
+ if(STATIONS[i].id==="bilan")setTimeout(()=>{fanfare();for(let k=0;k<4;k++)setTimeout(()=>burst(innerWidth*(.2+.2*k),innerHeight*.35,90),k*250)},400);
+ const on=$(".stn.on");on&&on.scrollIntoView({block:"nearest",inline:"center"});window.scrollTo({top:0})}
+function foot(){const p=S.st>0?`<button class="btn ghost" data-go="${S.st-1}">← ${STATIONS[S.st-1].t}</button>`:"<span></span>";const n=S.st<STATIONS.length-1?`<button class="btn primary" data-go="${S.st+1}">Prochaine station : ${STATIONS[S.st+1].t} →</button>`:"";return `<div class="foot">${p}${n}</div>`}
+function head(eb,title,lead,goal){return `<div class="st-head"><span class="sign"><i>${S.st}</i><span>Station · ${eb}</span></span></div><h2>${title}</h2>${goal?`<div class="goal">Objectif : ${goal}</div>`:""}<p class="lead">${lead}</p>`}
+function quizNav(key,len,word){const i=S.idx[key];return `<div class="row"><button class="btn ghost" data-qprev="${key}" ${i===0?"disabled":""}>← Précédent</button><button class="btn primary" data-qnext="${key}" ${i>=len-1?"disabled":""}>Suivant →</button><span class="counter">${word} ${i+1} sur ${len}</span></div>`}
+
+const R={};
+R.prep=()=>head("Départ","Embarquement","Formez 3 à 6 équipes. Chaque équipe choisit un nom de ligne, de station ou de destination. Pendant une heure, vous allez découvrir ce qui vous attend après le bac pro et gagner des points à chaque station.","comprendre que l'orientation se prépare dès la 1re")+
+ `<div class="teams-edit">${S.teams.map((t,i)=>`<div class="team-in" style="--c:${COL[i]}"><i></i><input id="team${i}" aria-label="Nom de l'équipe ${i+1}" data-team="${i}" value="${esc(t.name)}" maxlength="28"><button class="btn ghost" data-delteam="${i}" ${S.teams.length<=2?"disabled":""} aria-label="Supprimer l'équipe">✕</button></div>`).join("")}
+ <div class="row"><button class="btn" id="addteam" ${S.teams.length>=6?"disabled":""}>+ Ajouter une équipe</button></div></div>
+ <div class="rules"><div class="rule" style="--c:var(--line)"><b>Pas de mauvais choix</b>Chaque projet est respectable : études, alternance ou emploi.</div><div class="rule" style="--c:var(--blue)"><b>On s'écoute</b>On ne se moque pas du projet des autres.</div><div class="rule" style="--c:var(--green)"><b>On note ses idées</b>Garde une trace : elle te servira en terminale.</div></div>`+foot();
+
+R.bous=()=>{const n=BQ.length;
+ if(S.bq>=n){const sc={M:0,N:0,T:0,I:0,G:0,E:0},mx={M:0,N:0,T:0,I:0,G:0,E:0};BQ.forEach((x,i)=>x.k.forEach(k=>{sc[k]+=S.bans[i]||0;mx[k]+=2}));
+  const pct=k=>Math.round(100*sc[k]/mx[k]);const ord=Object.keys(sc).sort((a,b)=>pct(b)-pct(a));
+  return head("Test","Ma boussole","Voici les directions qui te ressemblent le plus. Ce test donne des pistes, pas une décision : parles-en avec tes professeurs et ta famille.","découvrir les pistes qui me ressemblent")+
+  `<div class="winner">${ord.slice(0,2).map((k,j)=>`<div class="wcard" style="--c:${PROF[k].c}"><span class="pill">${j===0?"Ta direction n° 1":"À explorer aussi"}</span><h3>${PROF[k].n}</h3><p>${PROF[k].d}</p><p><b>Formation :</b> ${PROF[k].p}</p><p class="why"><b>Métiers :</b> ${PROF[k].m}</p></div>`).join("")}</div>
+  <div class="section"><h3>Toutes tes directions</h3><div class="results">${ord.map(k=>`<div class="res"><b>${PROF[k].n}</b><div class="bar"><i style="width:${pct(k)}%;background:${PROF[k].c}"></i></div><em>${pct(k)} %</em></div>`).join("")}</div></div>
+  <div class="row" style="margin-top:20px"><button class="btn ticket" id="bagain">Élève suivant : recommencer le test</button></div>
+  <p class="note" style="margin-top:10px">En classe : un élève volontaire par équipe passe le test devant les autres (+1 pour son équipe), puis chacun le refait sur son téléphone avec le lien du jeu.</p>${awardHTML("bous"+(S.bRun||0),"Bonus volontaire (+1)",1)}`+foot()}
+ const x=BQ[S.bq];
+ return head("Test","Ma boussole","Réponds honnêtement à 12 affirmations. À la fin, la boussole t'indique les directions qui te ressemblent le plus.","découvrir les pistes qui me ressemblent")+
+ `<div class="card"><div class="counter">Affirmation ${S.bq+1} sur ${n}</div><div class="meter"><i style="width:${100*S.bq/n}%"></i></div><div class="q">« ${x.q} »</div>
+ <div class="scale"><button class="sc-btn" data-bans="0"><span aria-hidden="true">✋</span>Pas moi</button><button class="sc-btn" data-bans="1"><span aria-hidden="true">🤔</span>Un peu</button><button class="sc-btn" data-bans="2"><span aria-hidden="true">🙌</span>Tout moi !</button></div>
+ <div class="row"><button class="btn ghost" id="bback" ${S.bq===0?"disabled":""}>← Revenir</button></div></div>`+foot()};
+
+R.vf=()=>{const i=S.idx.vf,x=VF[i],k="vf"+i,r=S.rev[k];return head("Quiz","Vrai ou faux Parcoursup ?","Chaque équipe se concerte 20 secondes, puis montre son carton Vrai ou Faux en même temps. On révèle ensuite la réponse.","casser les idées reçues sur l'après-bac")+
+ `<div class="card"><div class="counter">Affirmation ${i+1}</div><div class="q">« ${x.q} »</div>
+ ${r?`<div class="answer ${x.a?"ok":"no"}"><strong>${x.a?"Vrai":"Faux"}</strong>${x.w}</div>${awardHTML(k,"Équipes qui ont trouvé (+1)",1)}`:`<div class="row"><button class="btn ticket" data-reveal="${k}">Révéler la réponse</button><button class="btn ghost" data-timer="20">Chrono 20 s</button></div>`}
+ ${quizNav("vf",VF.length,"Question")}</div><p class="src" style="margin-top:12px">Chiffres : parcoursup.gouv.fr, session 2025 et calendrier 2026. Les règles peuvent évoluer d'ici ta session : vérifie-les en terminale.</p>`+foot()};
+
+R.mem=()=>{const D=DECKS[S.mr],m=S.mems[S.mr],t=m.turn%S.teams.length,all=Object.keys(m.done).length===D.length;
+ return head("Association","Qui fait quoi ?","À tour de rôle, chaque équipe associe un élément de gauche à sa description. Bonne paire : +1 et l'équipe rejoue. Erreur : on passe à l'équipe suivante. Deux manches : les formations, puis les métiers.","connaître les poursuites d'études et les métiers du commerce")+
+ `<div class="row" style="margin-bottom:14px"><button class="btn ${S.mr===0?"primary":"ghost"}" data-mr="0">Manche 1 : les formations</button><button class="btn ${S.mr===1?"primary":"ghost"}" data-mr="1">Manche 2 : les métiers</button></div>`+
+ (all?`<div class="answer ok"><strong>Toutes les paires sont trouvées !</strong>${S.mr===0?"Passez à la manche 2 : les métiers.":"Bravo, vous connaissez maintenant 8 métiers du commerce."}</div>`:`<div class="turn">C'est au tour de <span class="who" style="--c:${COL[t]}">${esc(S.teams[t].name)}</span><button class="btn ghost" id="skipturn" style="margin-left:auto;color:inherit;border-color:rgba(255,255,255,.35)">Passer son tour</button></div>`)+
+ `<div class="match" style="margin-top:14px"><div class="col">${D.map((x,i)=>{const d=m.done[i];return `<button class="mc f ${m.a===i?"sel":""} ${d!=null?"ok":""}" ${d!=null?`style="--c:${COL[d]}" disabled`:""} data-ma="${i}">${x.f}</button>`}).join("")}</div>
+ <div class="col">${m.perm.map(j=>{const d=m.done[j];return `<button class="mc ${m.b===j?"sel":""} ${d!=null?"ok":""}" ${d!=null?`style="--c:${COL[d]}" disabled`:""} data-mb="${j}">${D[j].d}</button>`}).join("")}</div></div>
+ <div class="row" style="margin-top:14px"><button class="btn ghost" id="memreset">Mélanger et recommencer cette manche</button></div>`+foot()};
+
+R.itw=()=>{const q=S.itw||[];
+ return head("Oral","Interview croisée","Par deux, un élève interviewe l'autre pendant 2 minutes avec les questions tirées, puis on inverse les rôles. Ensuite, des volontaires présentent le projet de leur partenaire à la classe en 30 secondes.","mettre des mots sur son projet et oser en parler")+
+ `<div class="card"><div class="counter">Questions de l'interview</div>${q.length?`<ol style="margin:0;padding-left:1.2em;display:grid;gap:10px">${q.map(i=>`<li class="q" style="font-size:clamp(20px,2.3vw,27px)">${ITW[i]}</li>`).join("")}</ol>`:`<div class="q">Tire 3 questions pour lancer les interviews.</div>`}
+ <div class="row"><button class="btn ticket" id="itwdraw">Tirer 3 questions</button><button class="btn primary" data-timer="120">Chrono 2 min</button><button class="btn ghost" data-timer="30">Chrono 30 s (présentation)</button></div>
+ <p class="why">Règle d'or : on écoute, on reformule, on ne juge pas le projet de l'autre.</p>
+ ${awardHTML("itw"+(S.itwRun||0),"Bonus présentation du partenaire (+1)",1)}</div>`+foot()};
+
+R.cal=()=>{const c=S.cal,done=c.picked.length===CAL.length;
+ return head("Défi","Le bon calendrier","Remettez les étapes de Parcoursup dans l'ordre en cliquant dessus, de la première à la dernière. Les équipes proposent leur ordre à l'oral, puis on vérifie.","savoir quand agir en terminale")+
+ `<div class="cal"><div><div class="award-l" style="margin-bottom:8px">Étapes mélangées</div><div class="pool">${c.perm.map(i=>`<button class="cc" data-cal="${i}" ${c.picked.includes(i)||c.checked?"disabled":""}>${CAL[i].replace(/^[^:]+ : /,"")}</button>`).join("")}</div></div>
+ <div><div class="award-l" style="margin-bottom:8px">Votre ordre</div><div class="track">${c.picked.map((i,p)=>`<div class="cc ${c.checked?(i===p?"right":"wrong"):""}"><span class="n">${p+1}</span><span>${c.checked?CAL[i]:CAL[i].replace(/^[^:]+ : /,"")}</span></div>`).join("")}${done?"":`<div class="slot">Étape ${c.picked.length+1} : clique sur une étape à gauche</div>`}</div></div></div>
+ <div class="row" style="margin-top:14px"><button class="btn ticket" id="calcheck" ${!done||c.checked?"disabled":""}>Vérifier l'ordre</button><button class="btn ghost" id="calundo" ${!c.picked.length||c.checked?"disabled":""}>Annuler la dernière</button><button class="btn ghost" id="calreset">Recommencer</button>${c.checked?`<span class="counter">${c.picked.filter((i,p)=>i===p).length} / ${CAL.length} bien placées</span>`:""}</div>
+ ${c.checked?`<p class="why" style="margin-top:12px">Dates indicatives, d'après le calendrier 2026. Le calendrier exact de ta session sera publié sur parcoursup.gouv.fr.</p>`:""}
+ ${awardHTML("cal"+(S.calRun||0),"Équipes qui avaient le bon ordre (+2)",2)}`+foot()};
+
+R.pers=()=>{const i=S.idx.pers,x=PERS[i],k="pers"+i,r=S.rev[k],c=COL[i%COL.length];
+ return head("Jeu de rôle","Conseiller d'orientation","Vous êtes conseillers d'orientation. Lisez le profil, discutez 1 minute en équipe, puis un porte-parole présente sa proposition et la justifie. Le meilleur argument gagne 2 points.","relier un profil à une formation")+
+ `<div class="card"><div class="persona" style="--c:${c}"><span class="avatar" aria-hidden="true">${x.i}</span><div><h3>${x.n}</h3><div class="facts">${x.f.map(f=>`<span>${f}</span>`).join("")}</div></div></div>
+ <div class="q" style="font-size:clamp(20px,2.4vw,27px);font-weight:600">${x.q}</div>
+ ${r?`<div class="answer ok"><strong>Une piste</strong>${x.a}<p class="why" style="margin-top:6px">${x.w}</p></div>`:`<div class="row"><button class="btn ticket" data-reveal="${k}">Voir une piste possible</button><button class="btn ghost" data-timer="60">Chrono 1 min</button></div>`}
+ ${awardHTML(k,"Meilleure proposition (+2)",2)}${quizNav("pers",PERS.length,"Profil")}</div>`+foot()};
+
+R.dos=()=>{const i=S.idx.dos,x=DOS[i],k="dos"+i,r=S.rev[k];
+ return head("Atelier","Un dossier qui claque","Parcoursup te demandera de présenter ton projet et tes expériences. Chaque équipe réécrit la phrase faible en phrase forte. Le meilleur réécrit gagne 2 points.","savoir valoriser son parcours et ses expériences")+
+ `<div class="card"><div class="counter">${x.k} · ${i+1} sur ${DOS.length}</div><div class="pair"><div class="say bad"><small>Phrase faible</small>« ${x.b} »</div>${r?`<div class="say good"><small>Phrase forte</small>« ${x.g} »</div>`:`<div class="say hide">À vous de la rendre forte…</div>`}</div>
+ ${r?`<p class="why">${x.w}</p>`:`<div class="row"><button class="btn ticket" data-reveal="${k}">Révéler une version forte</button><button class="btn ghost" data-timer="60">Chrono 1 min</button></div>`}
+ ${awardHTML(k,"Meilleure réécriture (+2)",2)}${quizNav("dos",DOS.length,"Phrase")}</div>`+foot()};
+
+R.rep=()=>{const i=S.idx.rep,x=REP[i],k="rep"+i,r=S.rev[k];
+ return head("Situations","Et si… ?","Début juin, les réponses tombent. Que faut-il faire dans chaque situation ? Chaque équipe annonce sa lettre.","savoir réagir aux réponses de Parcoursup")+
+ `<div class="card"><div class="counter">Situation ${i+1}</div><div class="q">${x.q}</div>
+ <div class="opts">${x.o.map((o,j)=>`<div class="opt ${r?(j===x.c?"good":"bad"):""}"><span class="k">${"ABCD"[j]}</span><span>${o}</span></div>`).join("")}</div>
+ ${r?`<p class="why">${x.w}</p>${awardHTML(k,"Équipes qui ont trouvé (+1)",1)}`:`<div class="row"><button class="btn ticket" data-reveal="${k}">Révéler la bonne réponse</button><button class="btn ghost" data-timer="30">Chrono 30 s</button></div>`}
+ ${quizNav("rep",REP.length,"Situation")}</div>`+foot()};
+
+R.bilan=()=>{const sorted=S.teams.map((t,i)=>({...t,i})).sort((a,b)=>b.score-a.score);const max=Math.max(1,...sorted.map(t=>t.score));const order=sorted.length>=3?[sorted[1],sorted[0],sorted[2]]:sorted;
+ return head("Terminus","Ma feuille de route","Le voyage ne s'arrête pas là : la terminale se prépare dès maintenant. Chaque élève choisit au moins 3 actions et les note dans son agenda.","repartir avec des actions concrètes")+
+ `<div class="podium">${order.map(t=>`<div class="pod" style="--c:${COL[t.i]}">${t===sorted[0]&&t.score>0?'<span style="font-size:38px" aria-hidden="true">🏆</span>':""}<b>${esc(t.name)}</b><div class="bar" style="height:${60+120*t.score/max}px">${t.score}</div></div>`).join("")}</div>
+ <div class="section"><h3>D'ici la terminale, je vais…</h3><div class="road">${ROAD.map((r,i)=>`<label><input type="checkbox" id="road${i}" data-road="${i}" ${S.road[i]?"checked":""}> ${r}</label>`).join("")}</div></div>
+ <div class="section"><h3>Mon projet en une phrase</h3><div class="card"><div class="q" style="font-size:clamp(20px,2.4vw,28px)">« Après mon bac, je voudrais… parce que… Pour y arriver, cette année je vais… »</div><p class="why">Chaque élève l’écrit au dos de sa feuille et la garde jusqu’en terminale.</p></div></div>
+ <div class="section"><h3>Sites à connaître</h3><div class="links"><a href="https://www.parcoursup.gouv.fr" target="_blank" rel="noopener">parcoursup.gouv.fr</a><a href="https://www.onisep.fr" target="_blank" rel="noopener">onisep.fr</a><a href="https://www.alternance.emploi.gouv.fr" target="_blank" rel="noopener">alternance.emploi.gouv.fr</a></div></div>
+ <div class="section"><div class="row">${S.confirmReset?`<span>Tout effacer (équipes, scores, réponses) ?</span><button class="btn" id="resetyes" style="border-color:var(--stop);color:var(--stop)">Oui, nouvelle partie</button><button class="btn ghost" id="resetno">Annuler</button>`:`<button class="btn ghost" id="reset">Nouvelle partie</button>`}</div></div>
+ <p class="note" style="margin-top:20px">Ligne Avenir · jeu conçu par Marie Frison pour la classe de 1MCVA.</p>`+foot()};
+
+function render(){const st=$("#stage");st.style.setProperty("--sc",STATIONS[S.st].c);st.innerHTML=R[STATIONS[S.st].id]()}
+
+/* Événements */
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;ensureAudio();
+ if(d.go!=null){go(+d.go);return}
+ if(d.adj){const[i,p]=d.adj.split("|").map(Number);addPts(i,p);if(p>0){const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top,24,COL[i]);ding()}return}
+ if(d.aw){const k=d.aw,i=+d.i;if(S.aw[k]!=null){addPts(i,-S.aw[k]);delete S.aw[k]}else{const p=+d.pts||1;S.aw[k]=p;addPts(i,p);const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,COL[i]);ding()}save();render();return}
+ if(d.reveal){S.rev[d.reveal]=1;save();render();whoosh();return}
+ if(d.qnext){S.idx[d.qnext]++;save();render();return}
+ if(d.qprev){S.idx[d.qprev]--;save();render();return}
+ if(d.timer){setTimer(+d.timer,true);return}
+ if(d.delteam!=null){S.teams.splice(+d.delteam,1);S.aw={};save();drawBoard();render();return}
+ if(d.bans!=null){S.bans[S.bq]=+d.bans;S.bq++;tone(520+S.bq*40,0,.08,"triangle",.1);if(S.bq>=BQ.length){fanfare();burst(innerWidth/2,innerHeight/3,100)}save();render();return}
+ if(d.mr!=null){S.mr=+d.mr;save();render();return}
+ if(d.ma!=null||d.mb!=null){const m=S.mems[S.mr],D=DECKS[S.mr];if(d.ma!=null)m.a=+d.ma;else m.b=+d.mb;
+  if(m.a!=null&&m.b!=null){const t=m.turn%S.teams.length;if(m.a===m.b){m.done[m.a]=t;addPts(t,1);ding();const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,COL[t]);m.a=m.b=null;if(Object.keys(m.done).length===D.length)setTimeout(()=>{fanfare();burst(innerWidth/2,innerHeight/3,120)},200)}else{const a=m.a,bb=m.b;m.a=m.b=null;m.turn++;buzz(.4);save();render();document.querySelector(`[data-ma="${a}"]`)?.classList.add("err");document.querySelector(`[data-mb="${bb}"]`)?.classList.add("err");return}}
+  save();render();return}
+ if(d.cal!=null){S.cal.picked.push(+d.cal);tone(600,0,.06,"triangle",.1);save();render();return}
+ switch(b.id){
+  case "startgame":S.started=1;save();$("#splash").hidden=true;chime();burst(innerWidth/2,innerHeight/3,120);break;
+  case "home":$("#splash").hidden=false;break;
+  case "addteam":S.teams.push({name:"Ligne "+(S.teams.length+1),score:0});save();drawBoard();render();break;
+  case "bback":if(S.bq>0){S.bq--;save();render()}break;
+  case "bagain":S.bq=0;S.bans=[];S.bRun=(S.bRun||0)+1;save();render();break;
+  case "skipturn":{const m=S.mems[S.mr];m.turn++;m.a=m.b=null;}save();render();break;
+  case "memreset":S.mems[S.mr]=newMem(S.mr);save();render();break;
+  case "itwdraw":S.itw=shuffle(ITW.map((_,i)=>i)).slice(0,3);S.itwRun=(S.itwRun||0)+1;save();render();whoosh();break;
+  case "calundo":S.cal.picked.pop();save();render();break;
+  case "calreset":S.cal={perm:shuffle(CAL.map((_,i)=>i)),picked:[],checked:false};S.calRun=(S.calRun||0)+1;save();render();break;
+  case "calcheck":{S.cal.checked=true;const ok=S.cal.picked.every((i,p)=>i===p);save();render();if(ok){fanfare();burst(innerWidth/2,innerHeight/3,100)}else whoosh();break}
+  case "reset":S.confirmReset=1;render();break;
+  case "resetno":S.confirmReset=0;render();break;
+  case "resetyes":S=blank();save();drawSteps();drawBoard();render();setTimer(STATIONS[0].min*60);$("#splash").hidden=false;break;
+ }});
+document.addEventListener("change",e=>{const t=e.target;if(t.dataset.road!=null){S.road[t.dataset.road]=t.checked;save();if(t.checked)ding()}});
+document.addEventListener("input",e=>{const t=e.target;if(t.dataset.team!=null){S.teams[+t.dataset.team].name=t.value||("Ligne "+(+t.dataset.team+1));save();drawBoard()}});
+
+/* Effets */
+const cv=$("#fx"),cx=cv.getContext("2d");let parts=[],raf=null;const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function fit(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}addEventListener("resize",fit);fit();
+const FXC=["#E4007C","#FFC72C","#1F5BD8","#00A88F","#F28C00","#7B4BDB"];
+function burst(x,y,n,col){if(RM)return;for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,v=4+Math.random()*8;parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-5,r:Math.random()*6.28,vr:(Math.random()-.5)*.4,w:6+Math.random()*7,h:4+Math.random()*5,c:col&&Math.random()<.5?col:FXC[k%FXC.length],l:90+Math.random()*40,round:Math.random()<.3})}if(!raf)loop()}
+function loop(){cx.clearRect(0,0,innerWidth,innerHeight);parts=parts.filter(p=>p.l>0);for(const p of parts){p.vy+=.28;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.l--;cx.save();cx.globalAlpha=Math.min(1,p.l/30);cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;if(p.round){cx.beginPath();cx.arc(0,0,p.h,0,6.28);cx.fill()}else cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore()}raf=parts.length?requestAnimationFrame(loop):(cx.clearRect(0,0,innerWidth,innerHeight),null)}
+function ensureAudio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){}}
+function tone(f,d,len,type,vol){try{ensureAudio();const o=ac.createOscillator(),g=ac.createGain();o.type=type||"sine";o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+d;g.gain.setValueAtTime(vol||.18,t);g.gain.exponentialRampToValueAtTime(.001,t+len);o.start(t);o.stop(t+len+.02)}catch(e){}}
+function ding(){tone(988,0,.15,"triangle");tone(1319,.09,.3,"triangle")}
+function whoosh(){tone(523,0,.12,"square",.06);tone(784,.08,.2,"square",.06)}
+function chime(){[659,831,988].forEach((f,k)=>tone(f,k*.28,.5,"sine",.16))}
+function buzz(len){tone(150,0,len||.8,"sawtooth",.12)}
+function fanfare(){[523,659,784,1047].forEach((f,k)=>tone(f,k*.12,k===3?.5:.18,"triangle",.16))}
+$("#map").innerHTML=STATIONS.map((x,i)=>`<li><i style="border-color:${x.c}"></i>${x.t}<em>${x.min} min</em></li>`).join("");
+$("#map").style.gridTemplateColumns=`repeat(${STATIONS.length},minmax(90px,1fr))`;
+
+function start(data){S=(data&&data.S)||load()||blank();drawSteps();drawBoard();render();setTimer(STATIONS[S.st].min*60);$("#splash").hidden=!!S.started;window.claude?.hot?.snapshot?.(()=>({S}))}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
