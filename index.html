@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ligne Avenir 1MCVA</title>
+<meta name="author" content="Marie Frison">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Overpass:wght@400;600;800&display=swap">
+<style>
+/* Layout : plan de métro. Bandeau (logo de ligne + chrono) / la ligne et ses 10 stations / quai = scène de l'activité + tableau des voyageurs (scores) en tickets. */
+:root{
+  --bg:#EEF2F8; --surface:#FFFFFF; --surface2:#F5F7FB; --ink:#0D1A3A; --muted:#55607C; --rule:#D3DAE8;
+  --line:#E4007C; --ticket:#FFC72C; --on-ticket:#0D1A3A; --blue:#1F5BD8; --green:#00A88F; --orange:#F28C00; --violet:#7B4BDB;
+  --go:#0E9F6E; --go-soft:#DCF5EC; --stop:#D83A3A; --stop-soft:#FBE3E3; --sc:var(--line);
+  --f-sign:"Big Shoulders Display","Arial Narrow","Impact",sans-serif;
+  --f-body:"Overpass","Segoe UI",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1226; --surface:#141D38; --surface2:#1B2546; --ink:#F1F4FB; --muted:#A9B3CF; --rule:#2C3860;
+  --line:#FF3D9A; --blue:#6E9BFF; --green:#2BD3B4; --orange:#FFA53D; --violet:#A98BFF;
+  --go:#38D39F; --go-soft:#123A33; --stop:#FF6B6B; --stop-soft:#3C1E2A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1226; --surface:#141D38; --surface2:#1B2546; --ink:#F1F4FB; --muted:#A9B3CF; --rule:#2C3860;
+  --line:#FF3D9A; --blue:#6E9BFF; --green:#2BD3B4; --orange:#FFA53D; --violet:#A98BFF;
+  --go:#38D39F; --go-soft:#123A33; --stop:#FF6B6B; --stop-soft:#3C1E2A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.5;padding-inline:16px;padding-block:0 32px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+h1,h2,h3{font-family:var(--f-sign);font-weight:900;text-wrap:balance;margin:0;line-height:.98;letter-spacing:.005em;text-transform:uppercase}
+.wrap{max-width:1320px;margin:0 auto}
+a{color:var(--blue);font-weight:700}
+
+/* Bandeau */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:18px 8px}
+.brand{display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;text-align:left}
+.roundel{width:60px;height:60px;border-radius:50%;background:var(--line);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-size:34px;font-weight:900;box-shadow:0 0 0 5px var(--surface),0 0 0 8px var(--line);flex:0 0 auto}
+.brand h1{font-size:clamp(32px,4.4vw,52px)}
+.brand small{display:block;color:var(--muted);font-size:14px;font-weight:600}
+.brand small b{color:var(--line)}
+.timer{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);border-radius:12px;padding:6px 8px 6px 16px}
+.timer .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;font-weight:800;line-height:1.1}
+.timer .t{font-family:var(--f-sign);font-weight:800;font-size:40px;font-variant-numeric:tabular-nums;min-width:3.4ch;color:var(--ticket);line-height:1}
+.timer.low .t{color:var(--orange)}
+.timer.done{animation:blink .5s 6}
+.timer.done .t{color:var(--stop)}
+@keyframes blink{50%{opacity:.4}}
+.icon-btn{border:0;background:rgba(255,255,255,.14);color:inherit;border-radius:8px;height:42px;min-width:42px;font-weight:800;font-size:18px}
+.icon-btn:hover{background:rgba(255,255,255,.25)}
+
+/* La ligne */
+.metro{overflow-x:auto;padding:10px 4px 6px;margin-bottom:14px;scrollbar-width:thin}
+.metro ol{list-style:none;margin:0;padding:0 10px;display:grid;grid-template-columns:repeat(10,minmax(98px,1fr));position:relative;min-width:980px}
+.metro ol::before{content:"";position:absolute;left:50px;right:50px;top:17px;height:10px;border-radius:5px;background:var(--rule)}
+.metro .fill{position:absolute;left:50px;top:17px;height:10px;border-radius:5px;background:var(--line);transition:width .7s cubic-bezier(.3,.9,.3,1.1)}
+.stn{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0 2px;text-align:center}
+.stn .dot{width:44px;height:44px;border-radius:50%;background:var(--surface);border:6px solid var(--rule);display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:18px;color:var(--muted);transition:transform .2s}
+.stn:hover .dot{transform:scale(1.12)}
+.stn b{font-size:13px;line-height:1.15;font-weight:800;max-width:13ch;overflow-wrap:anywhere;hyphens:auto}
+.stn em{font-style:normal;font-size:11px;color:var(--muted)}
+.stn.done .dot{border-color:var(--line);color:var(--line)}
+.stn.on .dot{background:var(--c);border-color:var(--surface);color:#fff;transform:scale(1.25);box-shadow:0 0 0 4px var(--c),0 8px 18px rgba(0,0,0,.25)}
+.stn.on b{color:var(--c)}
+
+/* Quai */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--surface);border-radius:22px;padding:clamp(18px,3vw,38px);min-width:0;border-top:14px solid var(--sc);box-shadow:0 12px 30px rgba(13,26,58,.10);animation:slide .5s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes slide{from{transform:translateX(28px);opacity:.3}}
+.st-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.sign{flex:0 0 auto;background:var(--ink);color:var(--bg);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:10px}
+.sign i{width:34px;height:34px;border-radius:50%;background:var(--sc);display:grid;place-items:center;color:#fff;font-style:normal;font-family:var(--f-sign);font-weight:900;font-size:20px}
+.sign span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+.stage h2{font-size:clamp(38px,5vw,64px);color:var(--ink)}
+.lead{font-size:19px;color:var(--muted);max-width:64ch;margin:12px 0 20px}
+.goal{display:inline-block;background:var(--ticket);color:var(--on-ticket);font-weight:800;font-size:15px;border-radius:6px;padding:4px 12px;margin-top:10px}
+
+.card{background:var(--surface2);border:2px solid var(--rule);border-radius:var(--r);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column;gap:18px}
+.q{font-family:var(--f-body);font-weight:800;font-size:clamp(23px,2.8vw,33px);line-height:1.22}
+.counter{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:0;background:var(--surface);border:2px solid var(--rule);border-radius:10px;padding:11px 20px;font-weight:800;transition:transform .08s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.ticket{background:var(--ticket);color:var(--on-ticket);border-color:var(--ticket);font-size:19px}
+.btn.line{background:var(--line);border-color:var(--line);color:#fff}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.35;cursor:default}
+.answer{border-radius:12px;padding:16px 20px;font-size:19px;animation:pop .45s cubic-bezier(.2,.9,.3,1.4)}
+.answer.ok{background:var(--go-soft);border:3px solid var(--go)}
+.answer.no{background:var(--stop-soft);border:3px solid var(--stop)}
+.answer strong{font-family:var(--f-sign);font-size:44px;font-weight:900;display:block;line-height:1}
+.answer.ok strong{color:var(--go)} .answer.no strong{color:var(--stop)}
+@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:none;opacity:1}}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:12px 16px;font-size:19px}
+.opt .k{flex:0 0 auto;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:22px;color:#fff}
+.opt:nth-child(1) .k{background:var(--blue)} .opt:nth-child(2) .k{background:var(--line)} .opt:nth-child(3) .k{background:var(--green)} .opt:nth-child(4) .k{background:var(--orange)}
+.opt.good{border-color:var(--go);background:var(--go-soft);animation:pop .45s}
+.opt.good::after{content:"✔";margin-left:auto;color:var(--go);font-size:28px;font-weight:800}
+.opt.bad{opacity:.35}
+.why{color:var(--muted);font-size:17px;margin:0}
+.src{font-size:13px;color:var(--muted);margin:0}
+
+/* Points */
+.award{border-top:2px dashed var(--rule);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.award-l{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--c);background:var(--surface);border-radius:999px;padding:6px 16px;font-weight:800;font-size:16px}
+.chip:hover{transform:scale(1.04)}
+.chip.on{background:var(--c);color:#fff}
+
+/* Boussole */
+.scale{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.scale{grid-template-columns:1fr}}
+.sc-btn{border:3px solid var(--rule);background:var(--surface);border-radius:14px;padding:16px 10px;font-weight:800;font-size:19px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sc-btn span{font-size:30px;line-height:1}
+.sc-btn:hover{border-color:var(--sc);transform:translateY(-3px)}
+.meter{height:12px;border-radius:6px;background:var(--rule);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--sc);transition:width .4s}
+.results{display:grid;gap:12px}
+.res{display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:12px;align-items:center}
+@media (max-width:560px){.res{grid-template-columns:110px minmax(0,1fr) 36px;font-size:15px}}
+.res .bar{height:22px;border-radius:6px;background:var(--rule);overflow:hidden}
+.res .bar i{display:block;height:100%;border-radius:6px;animation:growx .8s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes growx{from{width:0!important}}
+.res b{font-size:16px} .res em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.winner{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.wcard{border-radius:14px;padding:18px;border:3px solid var(--c);background:var(--surface);animation:pop .5s}
+.wcard .pill{display:inline-block;background:var(--c);color:#fff;border-radius:999px;padding:2px 12px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.wcard h3{font-size:34px;margin:8px 0 6px}
+.wcard p{margin:0 0 6px}
+
+/* Association */
+.turn{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 16px;font-weight:800}
+.turn .who{background:var(--c);color:#fff;border-radius:999px;padding:4px 14px}
+.match{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:14px}
+@media (max-width:700px){.match{grid-template-columns:1fr}}
+.col{display:grid;gap:8px;align-content:start}
+.mc{text-align:left;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.35;transition:transform .1s}
+.mc.f{font-family:var(--f-sign);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.01em}
+.mc:hover:not([disabled]){border-color:var(--ink)}
+.mc.sel{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue);transform:scale(1.02)}
+.mc.ok{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));opacity:.85}
+.mc.err{animation:shake .4s;border-color:var(--stop)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Calendrier */
+.cal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.cal{grid-template-columns:1fr}}
+.pool,.track{display:grid;gap:8px;align-content:start}
+.cc{text-align:left;border:2px solid var(--rule);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:17px;display:flex;gap:12px;align-items:center}
+.cc:hover:not([disabled]){border-color:var(--ink)}
+.cc[disabled]{opacity:.25}
+.track .cc{border-left:8px solid var(--sc)}
+.cc .n{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:18px}
+.cc.right{border-color:var(--go);background:var(--go-soft)}
+.cc.wrong{border-color:var(--stop);background:var(--stop-soft)}
+.slot{border:2px dashed var(--rule);border-radius:12px;padding:12px;color:var(--muted);font-size:15px}
+
+/* Duo de phrases */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+.say{border-radius:12px;padding:16px 18px;font-size:20px;font-weight:700}
+.say small{display:block;font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.say.bad{background:var(--stop-soft);border:3px solid var(--stop)} .say.bad small{color:var(--stop)}
+.say.good{background:var(--go-soft);border:3px solid var(--go);animation:pop .45s} .say.good small{color:var(--go)}
+.say.hide{background:transparent;color:var(--muted);font-weight:600;font-size:17px;display:grid;place-items:center;min-height:96px;border:3px dashed var(--rule)}
+
+/* Profils */
+.persona{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:560px){.persona{grid-template-columns:1fr}}
+.avatar{width:96px;height:96px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:44px}
+.persona h3{font-size:42px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.facts span{background:var(--surface);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;font-size:15px;font-weight:600}
+
+/* Scores */
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.side h3{font-size:30px}
+.board{display:flex;flex-direction:column;gap:10px}
+.tk{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;background:var(--surface);border-radius:12px;padding:12px 14px 10px 18px;border-left:10px solid var(--c);box-shadow:0 4px 12px rgba(13,26,58,.08)}
+.tk::after{content:"";position:absolute;right:86px;top:8px;bottom:44px;border-right:2px dashed var(--rule)}
+.tk .nm{font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.tk .nm small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tk .pts{font-family:var(--f-sign);font-weight:900;font-size:40px;font-variant-numeric:tabular-nums;line-height:1;min-width:60px;text-align:center;color:var(--c)}
+.tk .pts.bump{animation:bump .6s cubic-bezier(.2,.9,.3,1.6)}
+@keyframes bump{40%{transform:scale(1.4)}}
+.tk.lead1{box-shadow:0 0 0 3px var(--ticket),0 6px 16px rgba(13,26,58,.15)}
+.adj{grid-column:1/-1;display:flex;gap:6px}
+.adj button{flex:1;border:0;background:var(--surface2);border-radius:6px;padding:2px 0;font-weight:800}
+.adj button:hover{background:var(--rule)}
+.note{font-size:14px;color:var(--muted);margin:0}
+.credit{font-size:14px;color:var(--muted);text-align:center;padding:12px;border:2px dashed var(--rule);border-radius:12px}
+.credit b{color:var(--ink)}
+
+.teams-edit{display:grid;gap:10px;max-width:580px}
+.team-in{display:flex;gap:10px;align-items:center}
+.team-in i{width:22px;height:22px;border-radius:50%;background:var(--c);flex:0 0 auto}
+.team-in input{flex:1;min-width:0;font:inherit;font-weight:800;border:2px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 14px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:24px}
+.rule{background:var(--surface2);border-radius:var(--r);padding:16px 18px;border-top:6px solid var(--c)}
+.rule b{font-family:var(--f-sign);font-weight:900;font-size:24px;text-transform:uppercase;display:block;margin-bottom:4px}
+
+/* Bilan */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin:16px 0 28px;flex-wrap:wrap}
+.pod{display:flex;flex-direction:column;align-items:center;gap:8px;width:160px}
+.pod .bar{width:100%;background:var(--c);border-radius:12px 12px 0 0;display:grid;place-items:start center;padding-top:10px;color:#fff;font-family:var(--f-sign);font-weight:900;font-size:44px;animation:grow .9s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes grow{from{height:0!important}}
+.pod b{text-align:center;overflow-wrap:anywhere}
+.road{display:grid;gap:8px}
+.road label{display:flex;gap:12px;align-items:center;background:var(--surface2);border:2px solid var(--rule);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600}
+.road label:has(input:checked){border-color:var(--go);background:var(--go-soft)}
+.road input{width:22px;height:22px;accent-color:var(--go)}
+.section{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+.section h3{font-size:32px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{background:var(--surface2);border:2px solid var(--rule);border-radius:10px;padding:8px 14px;text-decoration:none}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:18px;border-top:2px dashed var(--rule)}
+
+/* Accueil */
+.splash{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.splash-in{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.splash .board-sign{background:var(--ink);color:var(--bg);border-radius:18px;padding:22px clamp(18px,4vw,48px);display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 18px 40px rgba(13,26,58,.25)}
+.splash .dir{font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--ticket)}
+.big{font-family:var(--f-sign);font-weight:900;font-size:clamp(64px,13vw,160px);line-height:.85;margin:0;text-transform:uppercase}
+.big span{display:inline-block;animation:drop .7s cubic-bezier(.2,.9,.3,1.3) backwards}
+.big .l2{color:var(--ticket)}
+@keyframes drop{from{transform:translateY(-50px);opacity:0}}
+.splash p.sub{font-size:clamp(18px,2.2vw,22px);color:var(--muted);max-width:56ch;margin:0}
+.by{display:flex;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--rule);border-radius:999px;padding:8px 20px 8px 8px}
+.by .av{width:42px;height:42px;border-radius:50%;background:var(--line);color:#fff;display:grid;place-items:center;font-family:var(--f-sign);font-weight:900;font-size:22px}
+.by span{font-size:15px;color:var(--muted);text-align:left;line-height:1.25}
+.by b{color:var(--ink);font-size:18px;display:block}
+.go-btn{font-family:var(--f-sign);font-weight:900;text-transform:uppercase;font-size:clamp(28px,3.6vw,40px);background:var(--line);color:#fff;border:0;border-radius:16px;padding:14px 40px;box-shadow:0 8px 0 color-mix(in srgb,var(--line) 60%,#000);animation:breathe 2.2s ease-in-out infinite}
+.go-btn:active{transform:translateY(6px);box-shadow:0 2px 0 color-mix(in srgb,var(--line) 60%,#000)}
+@keyframes breathe{50%{transform:scale(1.05)}}
+.mini-line{width:100%;overflow-x:auto}
+.mini-line ol{list-style:none;margin:0;padding:10px 0 0;display:grid;grid-template-columns:repeat(10,minmax(90px,1fr));position:relative;min-width:900px}
+.mini-line ol::before{content:"";position:absolute;left:45px;right:45px;top:20px;height:10px;border-radius:5px;background:var(--line)}
+.mini-line li{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:800;line-height:1.15}
+.mini-line li i{width:30px;height:30px;border-radius:50%;background:var(--surface);border:6px solid var(--line)}
+.mini-line li em{font-style:normal;font-weight:600;color:var(--muted);font-size:12px}
+
+/* Consignes */
+.intro{font-size:18px;color:var(--muted);margin:12px 0 0;max-width:68ch}
+.consigne{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;background:var(--surface2);border:3px solid var(--sc);border-radius:18px;padding:18px 22px;margin:14px 0 24px}
+.consigne.solo{grid-template-columns:minmax(0,1fr)}
+.consigne h4{grid-column:1/-1;margin:0;font-family:var(--f-sign);font-weight:900;font-size:24px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.consigne ol{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:st;min-width:0}
+.consigne li{counter-increment:st;display:flex;gap:12px;align-items:flex-start;font-size:20px;line-height:1.35}
+.consigne li::before{content:counter(st);flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--sc);color:#fff;display:grid;place-items:center;font-weight:700;font-size:17px}
+.cons-side{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:190px}
+.cons-side .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.pcards{display:flex;gap:6px;flex-wrap:wrap;max-width:300px}
+.pcard{min-width:46px;height:58px;padding:0 10px;border-radius:8px;display:grid;place-items:center;color:#fff;font-family:var(--f-sign);font-weight:900;font-size:24px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.pts-chip{background:var(--ticket);color:var(--on-ticket);font-weight:700;border-radius:999px;padding:5px 14px;font-size:16px}
+@media (max-width:760px){.consigne{grid-template-columns:minmax(0,1fr)}}
+.rules-in{gap:20px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;width:100%;text-align:left}
+.rcard{background:var(--surface2);border-radius:16px;padding:16px 18px;border-top:6px solid var(--c)}
+.rcard b{display:block;font-family:var(--f-sign);font-weight:900;font-size:24px;text-transform:uppercase;margin-bottom:4px;color:var(--c)}
+.rcard span{font-size:17px;line-height:1.4}
+.howto{width:100%;text-align:left;background:var(--surface2);border-radius:16px;padding:16px 20px;display:grid;gap:10px}
+.howto ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:h}
+.howto li{counter-increment:h;display:flex;gap:10px;align-items:flex-start;font-size:17px}
+.howto li::before{content:counter(h);flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--line);color:#fff;display:grid;place-items:center;font-weight:700}
+.rules-btn{font-weight:700}
+#rulescards .pcards{max-width:none}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<div id="oops" hidden style="position:fixed;inset:0;z-index:99;background:#FFF8E1;color:#1A1A1A;font:18px/1.5 Arial,sans-serif;padding:32px 20px;overflow:auto"><div style="max-width:640px;margin:0 auto"><h2 style="font-size:28px;margin:0 0 12px">Le jeu n'a pas pu démarrer</h2><p>Ce navigateur bloque ou ne comprend pas le programme du jeu.</p><p><b>Pour le lancer :</b></p><ol><li>Enregistrez le fichier sur l'ordinateur (ou sur une clé USB).</li><li>Faites un clic droit dessus, puis « Ouvrir avec » → <b>Google Chrome</b>, <b>Microsoft Edge</b> ou <b>Firefox</b>.</li><li>N'utilisez pas l'aperçu de l'ENT, de Google Drive ou de la messagerie : ils bloquent les jeux.</li></ol><p style="color:#666;font-size:14px" id="oopsmsg"></p></div></div>
+<noscript><div style="padding:24px;font:18px Arial,sans-serif;background:#FFF8E1;color:#1A1A1A">Ce jeu a besoin de JavaScript. Ouvrez le fichier directement avec Chrome, Edge ou Firefox, pas dans un aperçu.</div></noscript>
+<script>window.__ok=false;window.onerror=function(m){var o=document.getElementById("oops");if(o&&!window.__ok){o.hidden=false;o.style.display="block";var t=document.getElementById("oopsmsg");if(t)t.textContent="Détail technique : "+m}};</script>
+
+
+<div class="wrap">
+  <header class="top">
+    <button class="brand" id="home" aria-label="Revenir à l'écran d'accueil"><span class="roundel" aria-hidden="true">A</span><span><span style="display:block" class="h1wrap"><h1>Ligne Avenir</h1></span><small>Orientation &amp; Parcoursup · 1MCVA · par <b>Marie Frison</b></small></span></button>
+    <div class="row"><button class="btn rules-btn" id="showrules">? Règles</button><div class="timer" id="timer" aria-live="polite">
+      <span class="lbl">Prochain<br>départ</span>
+      <span class="t" id="tval">00:00</span>
+      <button class="icon-btn" id="tplay" aria-label="Lancer le chrono">▶</button>
+      <button class="icon-btn" id="treset" aria-label="Remettre le chrono à la durée de l'activité">↺</button>
+    </div></div>
+  </header>
+  <nav class="metro" aria-label="Stations du jeu"><ol id="steps"></ol></nav>
+  <div class="main">
+    <main class="stage" id="stage"></main>
+    <aside class="side">
+      <h3>Les voyageurs</h3>
+      <div class="board" id="board"></div>
+      <p class="note">Les points se gagnent dans chaque station. −1 / +1 / +2 pour les bonus (participation, entraide, bonne idée).</p>
+      <div class="credit">Jeu conçu par <b>Marie Frison</b><br>Bac Pro MCV · 1MCVA</div>
+    </aside>
+  </div>
+</div>
+
+<div class="splash" id="splash" hidden>
+  <div class="splash-in">
+    <div class="board-sign">
+      <span class="dir">Direction · Terminale et après-bac</span>
+      <h2 class="big"><span style="animation-delay:.05s">Ligne</span> <span class="l2" style="animation-delay:.25s">Avenir</span></h2>
+    </div>
+    <p class="sub">Un voyage d'une heure en équipes pour découvrir ce qu'on peut faire après le bac pro MCV, comprendre Parcoursup et commencer à construire son projet dès la 1re.</p>
+    <div class="by"><span class="av" aria-hidden="true">MF</span><span>Un jeu conçu par<b>Marie Frison</b></span></div>
+    <button class="go-btn" id="startgame">Monter à bord</button>
+    <div class="mini-line"><ol id="map"></ol></div>
+  </div>
+</div>
+<div class="splash" id="rules" hidden>
+  <div class="splash-in rules-in">
+    <span class="dir" style="font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--line)">Avant le départ</span>
+    <h2 class="big" style="font-size:clamp(44px,8vw,104px)"><span class="l2" style="color:var(--line)">Comment on voyage ?</span></h2>
+    <div class="rgrid"><div class="rcard" style="--c:var(--line)"><b>Les équipes</b><span>4 élèves par équipe. Vos points s'affichent à droite, sur des tickets.</span></div><div class="rcard" style="--c:var(--blue)"><b>On répond ensemble</b><span>On se concerte à voix basse. Le porte-parole change à chaque question.</span></div><div class="rcard" style="--c:var(--green)"><b>Les points</b><span>+1 pour une bonne réponse, +2 pour la meilleure idée, des bonus pour la participation.</span></div><div class="rcard" style="--c:var(--orange)"><b>Les règles d'or</b><span>Pas de mauvais choix d'avenir. On ne se moque pas du projet des autres. On note ses idées.</span></div></div>
+    <div class="howto"><b>À chaque activité :</b><ol><li>Lisez l'encadré « Ce que vous devez faire » en haut de l'écran.</li><li>Concertez-vous en équipe avant le chrono.</li><li>Répondez avec vos cartons ou par votre porte-parole.</li><li>Le professeur donne les points.</li></ol></div>
+    <div class="row" style="justify-content:center"><b>Vos cartons :</b><span id="rulescards"></span></div>
+    <button class="go-btn" id="rulesgo">C'est parti !</button>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var _a, _b, _c, _d, _e;
+const COL = ["#1F5BD8", "#E4007C", "#00A88F", "#F28C00", "#7B4BDB", "#0A8FB8"];
+const STATIONS = [
+  { id: "prep", t: "Embarquement", min: 2, c: "#E4007C" },
+  { id: "bous", t: "Ma boussole", min: 6, c: "#1F5BD8" },
+  { id: "vf", t: "Vrai ou faux Parcoursup", min: 8, c: "#E4007C" },
+  { id: "mem", t: "Qui fait quoi ?", min: 8, c: "#00A88F" },
+  { id: "cal", t: "Le bon calendrier", min: 5, c: "#F28C00" },
+  { id: "itw", t: "Interview crois\xE9e", min: 7, c: "#0A8FB8" },
+  { id: "pers", t: "Conseiller d'orientation", min: 8, c: "#7B4BDB" },
+  { id: "dos", t: "Dossier qui claque", min: 7, c: "#1F5BD8" },
+  { id: "rep", t: "Et si\u2026 ?", min: 5, c: "#00A88F" },
+  { id: "bilan", t: "Terminus : ma feuille de route", min: 4, c: "#F28C00" }
+];
+const PROF = {
+  M: { n: "Manager de magasin", c: "#E4007C", p: "BTS MCO (Management commercial op\xE9rationnel)", m: "Manager de rayon, adjoint(e) de magasin, responsable de boutique", d: "Tu aimes le magasin, les rayons qui donnent envie et tu te vois diriger une \xE9quipe. C'est la suite logique de l'option A." },
+  N: { n: "N\xE9gociateur", c: "#1F5BD8", p: "BTS NDRC (N\xE9gociation et digitalisation de la relation client)", m: "Commercial(e), conseiller(\xE8re) client\xE8le, charg\xE9(e) de client\xE8le e-commerce", d: "Convaincre, prospecter, parler au t\xE9l\xE9phone ou sur les r\xE9seaux : tu aimes aller chercher le client." },
+  T: { n: "Conseiller technique", c: "#00A88F", p: "BTS CCST (Conseil et commercialisation de solutions techniques)", m: "Technico-commercial(e), vendeur(se) conseil en mat\xE9riel pro", d: "Tu aimes comprendre comment marchent les produits et les expliquer, y compris \xE0 des professionnels." },
+  I: { n: "Globe-trotter", c: "#F28C00", p: "BTS Commerce international", m: "Assistant(e) import-export, commercial(e) \xE0 l'international", d: "Les langues et les autres cultures te plaisent. Le commerce peut se faire sans fronti\xE8res." },
+  G: { n: "Organisateur", c: "#7B4BDB", p: "BTS GPME (Gestion de la PME)", m: "Assistant(e) de gestion, bras droit d'un dirigeant de petite entreprise", d: "Tableaux, organisation, suivi des clients et fournisseurs : tu aimes que tout soit carr\xE9." },
+  E: { n: "Press\xE9 d'agir", c: "#0A8FB8", p: "BTS en apprentissage, certificat de sp\xE9cialisation ou emploi direct", m: "Employ\xE9(e) de commerce, vendeur(se) conseil, puis \xE9volution avec l'exp\xE9rience", d: "Tu apprends en faisant et tu veux un salaire vite. L'alternance permet d'\xE9tudier tout en \xE9tant pay\xE9(e)." }
+};
+const BQ = [
+  { q: "J'aime am\xE9nager un rayon et rendre un magasin attractif.", k: ["M"] },
+  { q: "Convaincre quelqu'un, \xE7a me motive.", k: ["N"] },
+  { q: "Je veux gagner un salaire le plus vite possible.", k: ["E"] },
+  { q: "Je me d\xE9brouille en anglais (ou dans une autre langue) et j'aimerais voyager.", k: ["I"] },
+  { q: "J'aime comprendre comment fonctionne un produit technique : outil, appareil, mat\xE9riel.", k: ["T"] },
+  { q: "Organiser, classer, remplir des tableaux, \xE7a ne me d\xE9range pas.", k: ["G"] },
+  { q: "Je me vois encadrer une \xE9quipe un jour.", k: ["M"] },
+  { q: "Je suis \xE0 l'aise au t\xE9l\xE9phone et sur les r\xE9seaux sociaux.", k: ["N"] },
+  { q: "J'apprends mieux en faisant qu'en restant assis(e) en classe.", k: ["E"] },
+  { q: "Les chiffres ne me font pas peur : ventes, stocks, objectifs.", k: ["M", "G"] },
+  { q: "D\xE9couvrir d'autres cultures me pla\xEEt.", k: ["I"] },
+  { q: "Conseiller un client professionnel (artisan, entreprise) ne m'impressionne pas.", k: ["T", "N"] }
+];
+const VF = [
+  { q: "Sur Parcoursup, je peux faire jusqu'\xE0 10 v\u0153ux, plus 10 v\u0153ux en apprentissage.", a: true, w: "En 2026 : 10 v\u0153ux en formation initiale (avec 20 sous-v\u0153ux maximum) et jusqu'\xE0 10 v\u0153ux en apprentissage en plus." },
+  { q: "Le BTS, c'est surtout pour les bacheliers g\xE9n\xE9raux.", a: false, w: "Faux ! Chaque BTS r\xE9serve un nombre de places prioritaires aux bacheliers professionnels. En 2025, plus de 70 % des bacheliers pro ont re\xE7u au moins une proposition en BTS." },
+  { q: "Un avis favorable du conseil de classe augmente fortement mes chances d'entrer en BTS.", a: true, w: "Donn\xE9 au 2e trimestre de terminale. En 2025, 90,8 % des lyc\xE9ens pro qui l'avaient re\xE7u ont obtenu une proposition d'admission." },
+  { q: "Je dois classer mes v\u0153ux par ordre de pr\xE9f\xE9rence.", a: false, w: "Les v\u0153ux ne sont pas class\xE9s. Chaque formation examine ton dossier sans savoir quels sont tes autres choix." },
+  { q: "Le m\xEAme texte de motivation peut servir pour toutes les formations.", a: false, w: "Il faut \xE9crire un \xAB projet de formation motiv\xE9 \xBB pour chaque v\u0153u. Les formations rep\xE8rent vite les copier-coller." },
+  { q: "Mes notes de 1re ne compteront pas pour Parcoursup.", a: false, w: "Les bulletins de 1re font partie de ton dossier, avec ceux de terminale. \xC7a se joue donc d\xE8s cette ann\xE9e !" },
+  { q: "En apprentissage, je suis pay\xE9(e) pendant ma formation.", a: true, w: "L'apprenti(e) signe un contrat de travail avec une entreprise : il ou elle est salari\xE9(e) et touche un salaire." },
+  { q: "Un v\u0153u en apprentissage ne se concr\xE9tise que si je trouve une entreprise qui signe un contrat avec moi.", a: true, w: "La formation peut t'accepter, mais il faut aussi un employeur. Le CFA peut t'aider \xE0 chercher." },
+  { q: "Si je n'ai que des r\xE9ponses \xAB en attente \xBB d\xE9but juin, c'est perdu.", a: false, w: "Les listes d'attente bougent tous les jours, car d'autres candidats lib\xE8rent des places. Et il reste la phase compl\xE9mentaire." },
+  { q: "Ce que j'ai fait en PFMP peut compter dans mon dossier.", a: true, w: "Tes missions de stage, tes appr\xE9ciations et ce que tu en as appris montrent ton projet. Garde-en une trace d\xE8s maintenant." },
+  { q: "Parcoursup, c'est seulement pour aller \xE0 l'universit\xE9.", a: false, w: "Les BTS, les formations en apprentissage, les classes passerelles et beaucoup d'autres formations passent aussi par Parcoursup." },
+  { q: "On peut pr\xE9parer un BTS du commerce en alternance.", a: true, w: "Les BTS MCO, NDRC, GPME ou CCST existent aussi en apprentissage, dans des CFA ou des lyc\xE9es." },
+  { q: "Apr\xE8s un BTS, les \xE9tudes s'arr\xEAtent forc\xE9ment.", a: false, w: "Le BTS permet d'entrer dans la vie active, mais aussi de continuer vers un bac+3 (licence professionnelle, bachelor)." },
+  { q: "Pour mes v\u0153ux en BTS, mes professeurs donnent un avis sur ma capacit\xE9 \xE0 r\xE9ussir.", a: true, w: "C'est l'avis du conseil de classe du 2e trimestre de terminale. D'o\xF9 l'int\xE9r\xEAt d'\xEAtre s\xE9rieux et r\xE9gulier d\xE8s maintenant." }
+];
+const MEM = [
+  { f: "BTS MCO", d: "2 ans pour apprendre \xE0 g\xE9rer un magasin ou un rayon : \xE9quipe, stocks, chiffre d'affaires." },
+  { f: "BTS NDRC", d: "2 ans pour devenir commercial : prospecter, n\xE9gocier, suivre les clients en face \xE0 face, au t\xE9l\xE9phone et sur le web." },
+  { f: "BTS CCST", d: "2 ans pour vendre des produits techniques (mat\xE9riaux, \xE9quipements) en conseillant des clients professionnels." },
+  { f: "BTS Commerce international", d: "2 ans pour acheter et vendre \xE0 l'\xE9tranger : langues vivantes, import-export, transport des marchandises." },
+  { f: "BTS GPME", d: "2 ans pour devenir le bras droit du dirigeant d'une petite entreprise : gestion, clients, fournisseurs, administratif." },
+  { f: "Classe passerelle", d: "1 an de pr\xE9paration pour les bacheliers pro qui ont un avis favorable mais pas de place en BTS, avant d'y entrer." },
+  { f: "Apprentissage", d: "Une formation qui alterne cours et entreprise, avec un contrat de travail et un salaire." },
+  { f: "Emploi direct", d: "Entrer dans la vie active d\xE8s le bac, puis \xE9voluer avec l'exp\xE9rience ou reprendre une formation plus tard." }
+];
+const MEM2 = [
+  { f: "Manager de rayon", d: "Il ou elle anime une \xE9quipe, suit le chiffre d'affaires du rayon et organise la mise en rayon." },
+  { f: "Commercial(e) terrain", d: "Il ou elle se d\xE9place chez les clients, prospecte de nouveaux clients et n\xE9gocie des contrats." },
+  { f: "Technico-commercial(e)", d: "Il ou elle vend du mat\xE9riel ou des solutions techniques \xE0 des professionnels en expliquant leur fonctionnement." },
+  { f: "Assistant(e) import-export", d: "Il ou elle g\xE8re les commandes avec des clients ou fournisseurs \xE9trangers, souvent en anglais." },
+  { f: "Conseiller(\xE8re) client\xE8le \xE0 distance", d: "Il ou elle r\xE9pond aux clients par t\xE9l\xE9phone, chat ou mail et trouve des solutions \xE0 leurs demandes." },
+  { f: "Visual merchandiser", d: "Il ou elle cr\xE9e les vitrines et la mise en sc\xE8ne des produits pour donner envie d'entrer et d'acheter." },
+  { f: "Charg\xE9(e) d'e-commerce", d: "Il ou elle fait vivre la boutique en ligne : fiches produits, promotions, suivi des commandes." },
+  { f: "Adjoint(e) de direction de magasin", d: "Il ou elle seconde le directeur : plannings, gestion des stocks, r\xE9sultats du magasin." }
+];
+const ITW = ["Quel m\xE9tier te faisait r\xEAver quand tu \xE9tais petit(e) ? Et aujourd'hui ?", "Qu'est-ce que tu as pr\xE9f\xE9r\xE9 faire en PFMP ?", "Dans 5 ans, tu te vois o\xF9, en train de faire quoi ?", "Plut\xF4t \xE9tudes \xE0 temps plein ou alternance ? Pourquoi ?", "Quel point fort pourrais-tu mettre en avant dans ton dossier ?", "Qu'est-ce qui te fait peur dans l'apr\xE8s-bac ?", "Qui peut t'aider dans ton orientation ?", "Quelle entreprise ou enseigne aimerais-tu rejoindre ?", "Pr\xE9f\xE8res-tu rester pr\xE8s de chez toi ou partir ailleurs ?", "Quelle mati\xE8re ou activit\xE9 te donne de l'\xE9nergie ?", "Quel m\xE9tier du commerce aimerais-tu d\xE9couvrir ?", "Si tu avais un an pour faire ce que tu veux, que ferais-tu ?", "Qu'est-ce qu'un bon patron, pour toi ?", "Quelle est ta plus grande fiert\xE9 de cette ann\xE9e ?"];
+const CAL = [
+  "D\xE9cembre : le site Parcoursup ouvre, je d\xE9couvre les formations",
+  "De mi-janvier \xE0 mi-mars : je m'inscris et je formule mes v\u0153ux",
+  "Mars : le conseil de classe du 2e trimestre donne son avis (fiche Avenir)",
+  "D\xE9but avril : dernier d\xE9lai pour compl\xE9ter mon dossier et confirmer mes v\u0153ux",
+  "D\xE9but juin : je re\xE7ois les r\xE9ponses et je r\xE9ponds dans les d\xE9lais",
+  "\xC0 partir de mi-juin : phase compl\xE9mentaire si je n'ai pas de place",
+  "Juillet : j'ai mon bac et je m'inscris administrativement dans ma formation"
+];
+const PERS = [
+  { n: "In\xE8s", i: "I", f: ["Adore faire des vitrines", "Fiable en PFMP", "Veut devenir manager"], q: "In\xE8s a \xE9t\xE9 f\xE9licit\xE9e en PFMP pour la mise en valeur de son rayon. Elle se voit diriger un magasin un jour.", a: "BTS MCO, en formation initiale ou en apprentissage.", w: "Son go\xFBt pour l'espace de vente et le management colle \xE0 l'option A. Conseil : qu'elle d\xE9crive son rayon de PFMP dans son projet motiv\xE9." },
+  { n: "Yanis", i: "Y", f: ["Tr\xE8s \xE0 l'aise \xE0 l'oral", "Veut gagner sa vie vite", "D\xE9croche en classe"], q: "Yanis convainc tout le monde, adore le t\xE9l\xE9phone et veut un salaire rapidement. Rester 30 heures par semaine en classe le fatigue.", a: "BTS NDRC en apprentissage.", w: "Il garde la poursuite d'\xE9tudes et l'objectif BTS, mais apprend en entreprise et touche un salaire. Il doit commencer \xE0 chercher une entreprise t\xF4t." },
+  { n: "L\xE9a", i: "L", f: ["Fan de bricolage", "Aime expliquer", "PFMP dans un magasin de mat\xE9riaux"], q: "En PFMP chez un n\xE9gociant en mat\xE9riaux, L\xE9a adorait conseiller les artisans sur les produits.", a: "BTS CCST.", w: "Il forme \xE0 la vente de solutions techniques \xE0 des professionnels : exactement ce qu'elle a aim\xE9 en PFMP." },
+  { n: "Moussa", i: "M", f: ["Bon en anglais", "Parle aussi wolof", "R\xEAve de voyager"], q: "Moussa a de bonnes notes en anglais et voudrait travailler avec d'autres pays.", a: "BTS Commerce international.", w: "Les langues p\xE8sent lourd dans ce BTS. Conseil : continuer \xE0 travailler l'anglais et la deuxi\xE8me langue d\xE8s maintenant." },
+  { n: "Chlo\xE9", i: "C", f: ["Proposition d'embauche", "Veut \xEAtre autonome", "Pas envie de longues \xE9tudes"], q: "Le magasin o\xF9 Chlo\xE9 a fait sa PFMP veut l'embaucher apr\xE8s le bac.", a: "Emploi direct, ou une formation courte en alternance.", w: "C'est un vrai choix ! Elle peut \xE9voluer en interne et reprendre une formation plus tard (alternance, formation continue)." },
+  { n: "Kevin", i: "K", f: ["Avis favorable", "Pas de place en BTS en juin", "Motiv\xE9"], q: "Kevin a eu un avis favorable du conseil de classe, mais n'a re\xE7u que des \xAB Non \xBB et des \xAB En attente \xBB en BTS.", a: "Attendre les listes, faire la phase compl\xE9mentaire, et viser une classe passerelle.", w: "La classe passerelle pr\xE9pare pendant un an \xE0 entrer en BTS. Il peut aussi demander l'aide de son lyc\xE9e et de la commission d'acc\xE8s." },
+  { n: "Nathan", i: "N", f: ["G\xE8re l'Instagram de son club", "\xC0 l'aise au t\xE9l\xE9phone", "Aime les objectifs"], q: "Nathan anime d\xE9j\xE0 la page Instagram de son club de foot et adore relever des d\xE9fis chiffr\xE9s.", a: "BTS NDRC.", w: "Ce BTS m\xEAle n\xE9gociation et relation client digitale (r\xE9seaux sociaux, web). Il peut citer son exp\xE9rience avec le club dans son dossier." },
+  { n: "Emma", i: "E", f: ["Ne sait pas quoi faire", "Bonne \xE9l\xE8ve", "Stress\xE9e par Parcoursup"], q: "Emma a de bons r\xE9sultats mais aucune id\xE9e de ce qu'elle veut faire. Parcoursup l'angoisse.", a: "Explorer avant de choisir : immersions, portes ouvertes, rendez-vous avec le ou la PsyEN.", w: "Ne pas savoir en 1re, c'est normal. Elle a une ann\xE9e pour tester. En terminale, elle pourra faire plusieurs v\u0153ux vari\xE9s mais coh\xE9rents." },
+  { n: "Rayan", i: "R", f: ["Fan de sneakers", "Veut ouvrir sa boutique", "D\xE9brouillard"], q: "Rayan r\xEAve d'ouvrir sa propre boutique de sneakers un jour.", a: "BTS MCO ou BTS GPME, puis de l'exp\xE9rience avant de se lancer.", w: "G\xE9rer un magasin et une petite entreprise, c'est ce qu'il lui faudra savoir faire. Il pourra se former \xE0 la cr\xE9ation d'entreprise plus tard." },
+  { n: "Sarah", i: "S", f: ["Tr\xE8s organis\xE9e", "Aime l'administratif", "Moins \xE0 l'aise en vente"], q: "Sarah adore organiser, faire des tableaux, g\xE9rer des plannings. Vendre en face \xE0 face la stresse un peu.", a: "BTS GPME.", w: "Polyvalent et tourn\xE9 vers la gestion, il valorise son sens de l'organisation." }
+];
+const DOS = [
+  { k: "Projet motiv\xE9", b: "Je veux faire ce BTS parce que je ne sais pas quoi faire d'autre.", g: "Mes PFMP en magasin m'ont donn\xE9 envie d'\xE9voluer vers la gestion d'un rayon : votre BTS MCO est l'\xE9tape suivante de mon projet.", w: "On montre un projet, pas un choix par d\xE9faut." },
+  { k: "Projet motiv\xE9", b: "Je suis tr\xE8s motiv\xE9(e).", g: "En PFMP, j'ai pris en charge le r\xE9assort du rayon frais en autonomie pendant deux semaines.", w: "La motivation se prouve avec un exemple concret." },
+  { k: "Projet motiv\xE9", b: "J'aime le commerce.", g: "J'aime le contact client : en p\xE9riode de soldes, j'ai conseill\xE9 et encaiss\xE9 jusqu'\xE0 40 clients par jour.", w: "Des faits et des chiffres rendent la phrase cr\xE9dible." },
+  { k: "Projet motiv\xE9", b: "Votre formation a l'air bien.", g: "Lors de vos portes ouvertes, j'ai d\xE9couvert que vos \xE9tudiants pr\xE9parent un projet avec une enseigne locale : c'est ce qui m'attire.", w: "Montrer qu'on s'est renseign\xE9 sur cette formation pr\xE9cise." },
+  { k: "Projet motiv\xE9", b: "J'ai fait mon stage dans un magasin.", g: "Pendant ma PFMP dans un magasin de sport, j'ai pr\xE9par\xE9 et anim\xE9 une op\xE9ration commerciale sur les chaussures de running.", w: "On pr\xE9cise le lieu, la mission et ce qu'on a fait soi-m\xEAme." },
+  { k: "Projet motiv\xE9", b: "Je suis s\xE9rieux(se).", g: "Je n'ai eu aucune absence en PFMP et mon tuteur m'a confi\xE9 la caisse en autonomie d\xE8s la deuxi\xE8me semaine.", w: "Le s\xE9rieux se montre par des faits que le jury peut v\xE9rifier." },
+  { k: "Transforme en atout", b: "Je garde mes petits fr\xE8res le soir.", g: "Je suis responsable et je sais g\xE9rer plusieurs t\xE2ches \xE0 la fois.", w: "Une exp\xE9rience de la vie quotidienne devient une soft skill." },
+  { k: "Transforme en atout", b: "Je fais du foot en club depuis 6 ans.", g: "J'ai l'esprit d'\xE9quipe et de la pers\xE9v\xE9rance : je m'entra\xEEne deux fois par semaine depuis 6 ans.", w: "La r\xE9gularit\xE9 dans un loisir prouve l'engagement." },
+  { k: "Transforme en atout", b: "J'aide mes parents au march\xE9 le samedi.", g: "J'ai d\xE9j\xE0 une exp\xE9rience de la vente : accueil, encaissement et mise en avant des produits.", w: "Une exp\xE9rience familiale reste une vraie exp\xE9rience commerciale." },
+  { k: "Transforme en atout", b: "Je suis d\xE9l\xE9gu\xE9(e) de classe.", g: "Je sais prendre la parole devant un groupe et repr\xE9senter les autres.", w: "Un r\xF4le au lyc\xE9e montre la confiance en soi et le sens des responsabilit\xE9s." },
+  { k: "Transforme en atout", b: "Je joue en ligne avec des amis.", g: "Je coordonne une \xE9quipe de 5 joueurs en ligne : communication rapide, strat\xE9gie et esprit d'\xE9quipe.", w: "M\xEAme un loisir num\xE9rique d\xE9veloppe des soft skills, \xE0 condition de bien les nommer." },
+  { k: "Transforme en atout", b: "Je donne un coup de main dans une association.", g: "J'accueille le public d'une association d'aide alimentaire : \xE9coute, patience et respect de chacun.", w: "Le b\xE9n\xE9volat montre l'engagement et le sens du service, tr\xE8s appr\xE9ci\xE9 dans le commerce." },
+  { k: "\xC0 toi !", b: "\xC9cris ta propre phrase forte sur une feuille : ton projet ou une de tes exp\xE9riences.", g: "Deux ou trois volontaires la lisent \xE0 voix haute. La classe dit ce qui la rend forte : un fait pr\xE9cis, un chiffre, un lien avec la formation ?", w: "Garde cette phrase : elle sera le d\xE9but de ton projet de formation motiv\xE9 en terminale." }
+];
+const REP = [
+  { q: "D\xE9but juin, tu re\xE7ois un \xAB Oui \xBB pour un BTS et un \xAB En attente \xBB pour un autre BTS que tu pr\xE9f\xE8res.", o: ["Tu refuses le \xAB Oui \xBB pour garder toutes tes chances sur l'autre.", "Tu acceptes le \xAB Oui \xBB et tu maintiens le v\u0153u \xAB En attente \xBB que tu pr\xE9f\xE8res.", "Tu ne r\xE9ponds pas tout de suite, tu as le temps."], c: 1, w: "Tu s\xE9curises une place et tu gardes ta chance sur ton v\u0153u pr\xE9f\xE9r\xE9. Si une place s'y lib\xE8re, tu pourras changer." },
+  { q: "Tu oublies de r\xE9pondre \xE0 une proposition avant la date limite.", o: ["La formation garde ta place quand m\xEAme.", "Ta proposition est perdue, la place passe \xE0 quelqu'un d'autre.", "Parcoursup r\xE9pond automatiquement \xAB Oui \xBB pour toi."], c: 1, w: "Les d\xE9lais sont stricts. Active les notifications de l'application Parcoursup et v\xE9rifie tes mails." },
+  { q: "Tu n'as re\xE7u que des \xAB Non \xBB.", o: ["Tu participes \xE0 la phase compl\xE9mentaire et tu demandes de l'aide \xE0 ton lyc\xE9e.", "Tu abandonnes l'id\xE9e de faire des \xE9tudes.", "Tu attends l'ann\xE9e prochaine sans rien faire."], c: 0, w: "La phase compl\xE9mentaire propose les places encore libres. Tu peux aussi demander l'accompagnement de la commission d'acc\xE8s \xE0 l'enseignement sup\xE9rieur (CAES)." },
+  { q: "Un BTS en apprentissage t'accepte, mais tu n'as pas encore d'entreprise.", o: ["Tu attends que l'entreprise vienne te chercher.", "Tu cherches activement une entreprise : CV, candidatures, aide du CFA.", "Tu consid\xE8res que tu es inscrit(e) sans contrat."], c: 1, w: "Pas de contrat, pas d'apprentissage. Commence \xE0 chercher t\xF4t : salons de l'apprentissage, r\xE9seau de tes PFMP, aide du CFA." },
+  { q: "Tu re\xE7ois un \xAB Oui \xBB pour un BTS situ\xE9 loin de chez toi.", o: ["Tu refuses tout de suite, c'est trop loin.", "Tu te renseignes sur le logement, le transport et les aides (bourse, CROUS) avant de d\xE9cider.", "Tu ne r\xE9ponds pas et tu verras plus tard."], c: 1, w: "Des aides existent pour le logement et les \xE9tudes. Prends le temps de te renseigner, mais respecte le d\xE9lai de r\xE9ponse." },
+  { q: "En mars, tu h\xE9sites encore entre alternance et \xE9tudes \xE0 temps plein.", o: ["Tu dois choisir l'un des deux avant de faire tes v\u0153ux.", "Tu peux faire des v\u0153ux dans les deux : formation initiale et apprentissage.", "Tu attends la phase compl\xE9mentaire pour d\xE9cider."], c: 1, w: "Parcoursup permet des v\u0153ux en formation initiale et des v\u0153ux en apprentissage. Tu choisiras quand les r\xE9ponses arriveront." },
+  { q: "Tu re\xE7ois un \xAB Oui \xBB pour ta formation pr\xE9f\xE9r\xE9e, celle dont tu r\xEAvais.", o: ["Tu l'acceptes d\xE9finitivement.", "Tu gardes tous tes autres v\u0153ux en attente au cas o\xF9.", "Tu attends la fin de l'\xE9t\xE9 pour r\xE9pondre."], c: 0, w: "Quand c'est ton premier choix, tu peux accepter d\xE9finitivement. Tu lib\xE8res ainsi des places pour les autres candidats." },
+  { q: "Tu acceptes d\xE9finitivement une formation.", o: ["Tes autres v\u0153ux restent ouverts au cas o\xF9.", "Tes autres v\u0153ux sont abandonn\xE9s et tu fais ton inscription administrative.", "Tu dois recommencer tes v\u0153ux \xE0 z\xE9ro."], c: 1, w: "Accepter d\xE9finitivement, c'est choisir. Il reste \xE0 t'inscrire dans l'\xE9tablissement selon ses consignes." }
+];
+const ROAD = ["Explorer les formations sur Parcoursup et sur l'Onisep", "Aller \xE0 au moins 2 journ\xE9es portes ouvertes", "Faire une journ\xE9e d'immersion dans un BTS", "Prendre rendez-vous avec le ou la psychologue de l'\xC9ducation nationale (PsyEN)", "Noter mes missions et r\xE9ussites de PFMP dans un carnet", "Soigner mes bulletins d\xE8s la 1re : ils seront dans mon dossier", "Rep\xE9rer 2 ou 3 entreprises pour une \xE9ventuelle alternance"];
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const DECKS = [MEM, MEM2];
+function newMem(r) {
+  return { perm: shuffle(DECKS[r].map((_, i) => i)), done: {}, turn: 0, a: null, b: null };
+}
+function blank() {
+  return { teams: ["Ligne 1", "Ligne 2", "Ligne 3", "Ligne 4"].map((n) => ({ name: n, score: 0 })), st: 0, done: {}, idx: { vf: 0, pers: 0, dos: 0, rep: 0 }, rev: {}, aw: {}, bq: 0, bans: [], mr: 0, mems: [newMem(0), newMem(1)], cal: { perm: shuffle(CAL.map((_, i) => i)), picked: [], checked: false }, road: {}, started: 0, itw: [] };
+}
+let S;
+function save() {
+  try {
+    localStorage.setItem("ligneavenir1mcva_v2", JSON.stringify(S));
+  } catch (e) {
+  }
+}
+function load() {
+  try {
+    const r = localStorage.getItem("ligneavenir1mcva_v2");
+    if (r) return Object.assign(blank(), JSON.parse(r));
+  } catch (e) {
+  }
+  return null;
+}
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmt = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+let tLeft = 0, tRun = null, ac = null;
+function setTimer(sec, start2) {
+  clearInterval(tRun);
+  tRun = null;
+  tLeft = sec;
+  $("#timer").classList.remove("done");
+  drawT();
+  if (start2) play();
+}
+function drawT() {
+  $("#tval").textContent = fmt(tLeft);
+  $("#tplay").textContent = tRun ? "\u23F8" : "\u25B6";
+  $("#tplay").setAttribute("aria-label", tRun ? "Mettre en pause" : "Lancer le chrono");
+  $("#timer").classList.toggle("low", tRun != null && tLeft <= 10 && tLeft > 0);
+  if (tRun && tLeft <= 5 && tLeft > 0) tone(660, 0, 0.06, "square", 0.05);
+}
+function play() {
+  ensureAudio();
+  if (tRun) {
+    clearInterval(tRun);
+    tRun = null;
+    drawT();
+    return;
+  }
+  if (tLeft <= 0) return;
+  tRun = setInterval(() => {
+    tLeft--;
+    if (tLeft <= 0) {
+      tLeft = 0;
+      clearInterval(tRun);
+      tRun = null;
+      $("#timer").classList.add("done");
+      buzz();
+    }
+    drawT();
+  }, 1e3);
+  drawT();
+}
+$("#tplay").onclick = play;
+$("#treset").onclick = () => setTimer(STATIONS[S.st].min * 60);
+function drawBoard(bi) {
+  const top = Math.max(...S.teams.map((t) => t.score));
+  $("#board").innerHTML = S.teams.map((t, i) => `<div class="tk ${t.score === top && top > 0 ? "lead1" : ""}" style="--c:${COL[i]}"><span class="nm"><small>${t.score === top && top > 0 ? "En t\xEAte" : "Voyageurs"}</small>${esc(t.name)}</span><span class="pts ${bi === i ? "bump" : ""}">${t.score}</span><div class="adj"><button data-adj="${i}|-1" aria-label="Retirer un point">\u22121</button><button data-adj="${i}|1" aria-label="Ajouter un point">+1</button><button data-adj="${i}|2" aria-label="Ajouter deux points">+2</button></div></div>`).join("");
+}
+function addPts(i, p) {
+  S.teams[i].score += p;
+  save();
+  drawBoard(i);
+}
+function awardHTML(key, label, pts) {
+  return `<div class="award"><span class="award-l">${label}</span><div class="chips">${S.teams.map((t, i) => {
+    const k = key + "|" + i;
+    return `<button class="chip ${S.aw[k] != null ? "on" : ""}" style="--c:${COL[i]}" data-aw="${k}" data-i="${i}" data-pts="${pts}">${esc(t.name)}${S.aw[k] != null ? " +" + S.aw[k] : ""}</button>`;
+  }).join("")}</div></div>`;
+}
+function drawSteps() {
+  const n = STATIONS.length;
+  $("#steps").innerHTML = `<span class="fill" style="width:calc((100% - 100px) * ${S.st / (n - 1)})"></span>` + STATIONS.map((s, i) => `<li><button class="stn ${i === S.st ? "on" : ""} ${(S.done[i] || i < S.st) && i !== S.st ? "done" : ""}" style="--c:${s.c}" data-go="${i}" aria-current="${i === S.st ? "step" : "false"}"><span class="dot">${(S.done[i] || i < S.st) && i !== S.st ? "\u2713" : i}</span><b>${s.t}</b><em>${s.min} min</em></button></li>`).join("");
+  $("#steps").style.gridTemplateColumns = `repeat(${n},minmax(112px,1fr))`;
+}
+function go(i) {
+  if (i !== S.st) S.done[S.st] = true;
+  S.st = i;
+  save();
+  drawSteps();
+  render();
+  setTimer(STATIONS[i].min * 60);
+  chime();
+  const sg = $("#stage");
+  sg.style.animation = "none";
+  sg.offsetWidth;
+  sg.style.animation = "";
+  if (STATIONS[i].id === "bilan") setTimeout(() => {
+    fanfare();
+    for (let k = 0; k < 4; k++) setTimeout(() => burst(innerWidth * (0.2 + 0.2 * k), innerHeight * 0.35, 90), k * 250);
+  }, 400);
+  const on = $(".stn.on");
+  on && on.scrollIntoView({ block: "nearest", inline: "center" });
+  window.scrollTo({ top: 0 });
+}
+function foot() {
+  const p = S.st > 0 ? `<button class="btn ghost" data-go="${S.st - 1}">\u2190 ${STATIONS[S.st - 1].t}</button>` : "<span></span>";
+  const n = S.st < STATIONS.length - 1 ? `<button class="btn primary" data-go="${S.st + 1}">Prochaine station : ${STATIONS[S.st + 1].t} \u2192</button>` : "";
+  return `<div class="foot">${p}${n}</div>`;
+}
+function head(eb, title, lead, goal) {
+  return `<div class="st-head"><span class="sign"><i>${S.st}</i><span>Station \xB7 ${eb}</span></span></div><h2>${title}</h2>${goal ? `<div class="goal">Objectif : ${goal}</div>` : ""}${consHTML(STATIONS[S.st].id, lead)}`;
+}
+function quizNav(key, len, word) {
+  const i = S.idx[key];
+  return `<div class="row"><button class="btn ghost" data-qprev="${key}" ${i === 0 ? "disabled" : ""}>\u2190 Pr\xE9c\xE9dent</button><button class="btn primary" data-qnext="${key}" ${i >= len - 1 ? "disabled" : ""}>Suivant \u2192</button><span class="counter">${word} ${i + 1} sur ${len}</span></div>`;
+}
+const R = {};
+R.prep = () => head("D\xE9part", "Embarquement", "Formez 3 \xE0 6 \xE9quipes. Chaque \xE9quipe choisit un nom de ligne, de station ou de destination. Pendant une heure, vous allez d\xE9couvrir ce qui vous attend apr\xE8s le bac pro et gagner des points \xE0 chaque station.", "comprendre que l'orientation se pr\xE9pare d\xE8s la 1re") + `<div class="teams-edit">${S.teams.map((t, i) => `<div class="team-in" style="--c:${COL[i]}"><i></i><input id="team${i}" aria-label="Nom de l'\xE9quipe ${i + 1}" data-team="${i}" value="${esc(t.name)}" maxlength="28"><button class="btn ghost" data-delteam="${i}" ${S.teams.length <= 2 ? "disabled" : ""} aria-label="Supprimer l'\xE9quipe">\u2715</button></div>`).join("")}
+ <div class="row"><button class="btn" id="addteam" ${S.teams.length >= 6 ? "disabled" : ""}>+ Ajouter une \xE9quipe</button></div></div>
+ <div class="rules"><div class="rule" style="--c:var(--line)"><b>Pas de mauvais choix</b>Chaque projet est respectable : \xE9tudes, alternance ou emploi.</div><div class="rule" style="--c:var(--blue)"><b>On s'\xE9coute</b>On ne se moque pas du projet des autres.</div><div class="rule" style="--c:var(--green)"><b>On note ses id\xE9es</b>Garde une trace : elle te servira en terminale.</div></div>` + foot();
+R.bous = () => {
+  const n = BQ.length;
+  if (S.bq >= n) {
+    const sc = { M: 0, N: 0, T: 0, I: 0, G: 0, E: 0 }, mx = { M: 0, N: 0, T: 0, I: 0, G: 0, E: 0 };
+    BQ.forEach((x2, i) => x2.k.forEach((k) => {
+      sc[k] += S.bans[i] || 0;
+      mx[k] += 2;
+    }));
+    const pct = (k) => Math.round(100 * sc[k] / mx[k]);
+    const ord = Object.keys(sc).sort((a, b) => pct(b) - pct(a));
+    return head("Test", "Ma boussole", "Voici les directions qui te ressemblent le plus. Ce test donne des pistes, pas une d\xE9cision : parles-en avec tes professeurs et ta famille.", "d\xE9couvrir les pistes qui me ressemblent") + `<div class="winner">${ord.slice(0, 2).map((k, j) => `<div class="wcard" style="--c:${PROF[k].c}"><span class="pill">${j === 0 ? "Ta direction n\xB0 1" : "\xC0 explorer aussi"}</span><h3>${PROF[k].n}</h3><p>${PROF[k].d}</p><p><b>Formation :</b> ${PROF[k].p}</p><p class="why"><b>M\xE9tiers :</b> ${PROF[k].m}</p></div>`).join("")}</div>
+  <div class="section"><h3>Toutes tes directions</h3><div class="results">${ord.map((k) => `<div class="res"><b>${PROF[k].n}</b><div class="bar"><i style="width:${pct(k)}%;background:${PROF[k].c}"></i></div><em>${pct(k)} %</em></div>`).join("")}</div></div>
+  <div class="row" style="margin-top:20px"><button class="btn ticket" id="bagain">\xC9l\xE8ve suivant : recommencer le test</button></div>
+  <p class="note" style="margin-top:10px">En classe : un \xE9l\xE8ve volontaire par \xE9quipe passe le test devant les autres (+1 pour son \xE9quipe), puis chacun le refait sur son t\xE9l\xE9phone avec le lien du jeu.</p>${awardHTML("bous" + (S.bRun || 0), "Bonus volontaire (+1)", 1)}` + foot();
+  }
+  const x = BQ[S.bq];
+  return head("Test", "Ma boussole", "R\xE9ponds honn\xEAtement \xE0 12 affirmations. \xC0 la fin, la boussole t'indique les directions qui te ressemblent le plus.", "d\xE9couvrir les pistes qui me ressemblent") + `<div class="card"><div class="counter">Affirmation ${S.bq + 1} sur ${n}</div><div class="meter"><i style="width:${100 * S.bq / n}%"></i></div><div class="q">\xAB ${x.q} \xBB</div>
+ <div class="scale"><button class="sc-btn" data-bans="0"><span aria-hidden="true">\u270B</span>Pas moi</button><button class="sc-btn" data-bans="1"><span aria-hidden="true">\u{1F914}</span>Un peu</button><button class="sc-btn" data-bans="2"><span aria-hidden="true">\u{1F64C}</span>Tout moi !</button></div>
+ <div class="row"><button class="btn ghost" id="bback" ${S.bq === 0 ? "disabled" : ""}>\u2190 Revenir</button></div></div>` + foot();
+};
+R.vf = () => {
+  const i = S.idx.vf, x = VF[i], k = "vf" + i, r = S.rev[k];
+  return head("Quiz", "Vrai ou faux Parcoursup ?", "Chaque \xE9quipe se concerte 20 secondes, puis montre son carton Vrai ou Faux en m\xEAme temps. On r\xE9v\xE8le ensuite la r\xE9ponse.", "casser les id\xE9es re\xE7ues sur l'apr\xE8s-bac") + `<div class="card"><div class="counter">Affirmation ${i + 1}</div><div class="q">\xAB ${x.q} \xBB</div>
+ ${r ? `<div class="answer ${x.a ? "ok" : "no"}"><strong>${x.a ? "Vrai" : "Faux"}</strong>${x.w}</div>${awardHTML(k, "\xC9quipes qui ont trouv\xE9 (+1)", 1)}` : `<div class="row"><button class="btn ticket" data-reveal="${k}">R\xE9v\xE9ler la r\xE9ponse</button><button class="btn ghost" data-timer="20">Chrono 20 s</button></div>`}
+ ${quizNav("vf", VF.length, "Question")}</div><p class="src" style="margin-top:12px">Chiffres : parcoursup.gouv.fr, session 2025 et calendrier 2026. Les r\xE8gles peuvent \xE9voluer d'ici ta session : v\xE9rifie-les en terminale.</p>` + foot();
+};
+R.mem = () => {
+  const D = DECKS[S.mr], m = S.mems[S.mr], t = m.turn % S.teams.length, all = Object.keys(m.done).length === D.length;
+  return head("Association", "Qui fait quoi ?", "\xC0 tour de r\xF4le, chaque \xE9quipe associe un \xE9l\xE9ment de gauche \xE0 sa description. Bonne paire : +1 et l'\xE9quipe rejoue. Erreur : on passe \xE0 l'\xE9quipe suivante. Deux manches : les formations, puis les m\xE9tiers.", "conna\xEEtre les poursuites d'\xE9tudes et les m\xE9tiers du commerce") + `<div class="row" style="margin-bottom:14px"><button class="btn ${S.mr === 0 ? "primary" : "ghost"}" data-mr="0">Manche 1 : les formations</button><button class="btn ${S.mr === 1 ? "primary" : "ghost"}" data-mr="1">Manche 2 : les m\xE9tiers</button></div>` + (all ? `<div class="answer ok"><strong>Toutes les paires sont trouv\xE9es !</strong>${S.mr === 0 ? "Passez \xE0 la manche 2 : les m\xE9tiers." : "Bravo, vous connaissez maintenant 8 m\xE9tiers du commerce."}</div>` : `<div class="turn">C'est au tour de <span class="who" style="--c:${COL[t]}">${esc(S.teams[t].name)}</span><button class="btn ghost" id="skipturn" style="margin-left:auto;color:inherit;border-color:rgba(255,255,255,.35)">Passer son tour</button></div>`) + `<div class="match" style="margin-top:14px"><div class="col">${D.map((x, i) => {
+    const d = m.done[i];
+    return `<button class="mc f ${m.a === i ? "sel" : ""} ${d != null ? "ok" : ""}" ${d != null ? `style="--c:${COL[d]}" disabled` : ""} data-ma="${i}">${x.f}</button>`;
+  }).join("")}</div>
+ <div class="col">${m.perm.map((j) => {
+    const d = m.done[j];
+    return `<button class="mc ${m.b === j ? "sel" : ""} ${d != null ? "ok" : ""}" ${d != null ? `style="--c:${COL[d]}" disabled` : ""} data-mb="${j}">${D[j].d}</button>`;
+  }).join("")}</div></div>
+ <div class="row" style="margin-top:14px"><button class="btn ghost" id="memreset">M\xE9langer et recommencer cette manche</button></div>` + foot();
+};
+R.itw = () => {
+  const q = S.itw || [];
+  return head("Oral", "Interview crois\xE9e", "Par deux, un \xE9l\xE8ve interviewe l'autre pendant 2 minutes avec les questions tir\xE9es, puis on inverse les r\xF4les. Ensuite, des volontaires pr\xE9sentent le projet de leur partenaire \xE0 la classe en 30 secondes.", "mettre des mots sur son projet et oser en parler") + `<div class="card"><div class="counter">Questions de l'interview</div>${q.length ? `<ol style="margin:0;padding-left:1.2em;display:grid;gap:10px">${q.map((i) => `<li class="q" style="font-size:clamp(20px,2.3vw,27px)">${ITW[i]}</li>`).join("")}</ol>` : `<div class="q">Tire 3 questions pour lancer les interviews.</div>`}
+ <div class="row"><button class="btn ticket" id="itwdraw">Tirer 3 questions</button><button class="btn primary" data-timer="120">Chrono 2 min</button><button class="btn ghost" data-timer="30">Chrono 30 s (pr\xE9sentation)</button></div>
+ <p class="why">R\xE8gle d'or : on \xE9coute, on reformule, on ne juge pas le projet de l'autre.</p>
+ ${awardHTML("itw" + (S.itwRun || 0), "Bonus pr\xE9sentation du partenaire (+1)", 1)}</div>` + foot();
+};
+R.cal = () => {
+  const c = S.cal, done = c.picked.length === CAL.length;
+  return head("D\xE9fi", "Le bon calendrier", "Remettez les \xE9tapes de Parcoursup dans l'ordre en cliquant dessus, de la premi\xE8re \xE0 la derni\xE8re. Les \xE9quipes proposent leur ordre \xE0 l'oral, puis on v\xE9rifie.", "savoir quand agir en terminale") + `<div class="cal"><div><div class="award-l" style="margin-bottom:8px">\xC9tapes m\xE9lang\xE9es</div><div class="pool">${c.perm.map((i) => `<button class="cc" data-cal="${i}" ${c.picked.includes(i) || c.checked ? "disabled" : ""}>${CAL[i].replace(/^[^:]+ : /, "")}</button>`).join("")}</div></div>
+ <div><div class="award-l" style="margin-bottom:8px">Votre ordre</div><div class="track">${c.picked.map((i, p) => `<div class="cc ${c.checked ? i === p ? "right" : "wrong" : ""}"><span class="n">${p + 1}</span><span>${c.checked ? CAL[i] : CAL[i].replace(/^[^:]+ : /, "")}</span></div>`).join("")}${done ? "" : `<div class="slot">\xC9tape ${c.picked.length + 1} : clique sur une \xE9tape \xE0 gauche</div>`}</div></div></div>
+ <div class="row" style="margin-top:14px"><button class="btn ticket" id="calcheck" ${!done || c.checked ? "disabled" : ""}>V\xE9rifier l'ordre</button><button class="btn ghost" id="calundo" ${!c.picked.length || c.checked ? "disabled" : ""}>Annuler la derni\xE8re</button><button class="btn ghost" id="calreset">Recommencer</button>${c.checked ? `<span class="counter">${c.picked.filter((i, p) => i === p).length} / ${CAL.length} bien plac\xE9es</span>` : ""}</div>
+ ${c.checked ? `<p class="why" style="margin-top:12px">Dates indicatives, d'apr\xE8s le calendrier 2026. Le calendrier exact de ta session sera publi\xE9 sur parcoursup.gouv.fr.</p>` : ""}
+ ${awardHTML("cal" + (S.calRun || 0), "\xC9quipes qui avaient le bon ordre (+2)", 2)}` + foot();
+};
+R.pers = () => {
+  const i = S.idx.pers, x = PERS[i], k = "pers" + i, r = S.rev[k], c = COL[i % COL.length];
+  return head("Jeu de r\xF4le", "Conseiller d'orientation", "Vous \xEAtes conseillers d'orientation. Lisez le profil, discutez 1 minute en \xE9quipe, puis un porte-parole pr\xE9sente sa proposition et la justifie. Le meilleur argument gagne 2 points.", "relier un profil \xE0 une formation") + `<div class="card"><div class="persona" style="--c:${c}"><span class="avatar" aria-hidden="true">${x.i}</span><div><h3>${x.n}</h3><div class="facts">${x.f.map((f) => `<span>${f}</span>`).join("")}</div></div></div>
+ <div class="q" style="font-size:clamp(20px,2.4vw,27px);font-weight:600">${x.q}</div>
+ ${r ? `<div class="answer ok"><strong>Une piste</strong>${x.a}<p class="why" style="margin-top:6px">${x.w}</p></div>` : `<div class="row"><button class="btn ticket" data-reveal="${k}">Voir une piste possible</button><button class="btn ghost" data-timer="60">Chrono 1 min</button></div>`}
+ ${awardHTML(k, "Meilleure proposition (+2)", 2)}${quizNav("pers", PERS.length, "Profil")}</div>` + foot();
+};
+R.dos = () => {
+  const i = S.idx.dos, x = DOS[i], k = "dos" + i, r = S.rev[k];
+  return head("Atelier", "Un dossier qui claque", "Parcoursup te demandera de pr\xE9senter ton projet et tes exp\xE9riences. Chaque \xE9quipe r\xE9\xE9crit la phrase faible en phrase forte. Le meilleur r\xE9\xE9crit gagne 2 points.", "savoir valoriser son parcours et ses exp\xE9riences") + `<div class="card"><div class="counter">${x.k} \xB7 ${i + 1} sur ${DOS.length}</div><div class="pair"><div class="say bad"><small>Phrase faible</small>\xAB ${x.b} \xBB</div>${r ? `<div class="say good"><small>Phrase forte</small>\xAB ${x.g} \xBB</div>` : `<div class="say hide">\xC0 vous de la rendre forte\u2026</div>`}</div>
+ ${r ? `<p class="why">${x.w}</p>` : `<div class="row"><button class="btn ticket" data-reveal="${k}">R\xE9v\xE9ler une version forte</button><button class="btn ghost" data-timer="60">Chrono 1 min</button></div>`}
+ ${awardHTML(k, "Meilleure r\xE9\xE9criture (+2)", 2)}${quizNav("dos", DOS.length, "Phrase")}</div>` + foot();
+};
+R.rep = () => {
+  const i = S.idx.rep, x = REP[i], k = "rep" + i, r = S.rev[k];
+  return head("Situations", "Et si\u2026 ?", "D\xE9but juin, les r\xE9ponses tombent. Que faut-il faire dans chaque situation ? Chaque \xE9quipe annonce sa lettre.", "savoir r\xE9agir aux r\xE9ponses de Parcoursup") + `<div class="card"><div class="counter">Situation ${i + 1}</div><div class="q">${x.q}</div>
+ <div class="opts">${x.o.map((o, j) => `<div class="opt ${r ? j === x.c ? "good" : "bad" : ""}"><span class="k">${"ABCD"[j]}</span><span>${o}</span></div>`).join("")}</div>
+ ${r ? `<p class="why">${x.w}</p>${awardHTML(k, "\xC9quipes qui ont trouv\xE9 (+1)", 1)}` : `<div class="row"><button class="btn ticket" data-reveal="${k}">R\xE9v\xE9ler la bonne r\xE9ponse</button><button class="btn ghost" data-timer="30">Chrono 30 s</button></div>`}
+ ${quizNav("rep", REP.length, "Situation")}</div>` + foot();
+};
+R.bilan = () => {
+  const sorted = S.teams.map((t, i) => __spreadProps(__spreadValues({}, t), { i })).sort((a, b) => b.score - a.score);
+  const max = Math.max(1, ...sorted.map((t) => t.score));
+  const order = sorted.length >= 3 ? [sorted[1], sorted[0], sorted[2]] : sorted;
+  return head("Terminus", "Ma feuille de route", "Le voyage ne s'arr\xEAte pas l\xE0 : la terminale se pr\xE9pare d\xE8s maintenant. Chaque \xE9l\xE8ve choisit au moins 3 actions et les note dans son agenda.", "repartir avec des actions concr\xE8tes") + `<div class="podium">${order.map((t) => `<div class="pod" style="--c:${COL[t.i]}">${t === sorted[0] && t.score > 0 ? '<span style="font-size:38px" aria-hidden="true">\u{1F3C6}</span>' : ""}<b>${esc(t.name)}</b><div class="bar" style="height:${60 + 120 * t.score / max}px">${t.score}</div></div>`).join("")}</div>
+ <div class="section"><h3>D'ici la terminale, je vais\u2026</h3><div class="road">${ROAD.map((r, i) => `<label><input type="checkbox" id="road${i}" data-road="${i}" ${S.road[i] ? "checked" : ""}> ${r}</label>`).join("")}</div></div>
+ <div class="section"><h3>Mon projet en une phrase</h3><div class="card"><div class="q" style="font-size:clamp(20px,2.4vw,28px)">\xAB Apr\xE8s mon bac, je voudrais\u2026 parce que\u2026 Pour y arriver, cette ann\xE9e je vais\u2026 \xBB</div><p class="why">Chaque \xE9l\xE8ve l\u2019\xE9crit au dos de sa feuille et la garde jusqu\u2019en terminale.</p></div></div>
+ <div class="section"><h3>Sites \xE0 conna\xEEtre</h3><div class="links"><a href="https://www.parcoursup.gouv.fr" target="_blank" rel="noopener">parcoursup.gouv.fr</a><a href="https://www.onisep.fr" target="_blank" rel="noopener">onisep.fr</a><a href="https://www.alternance.emploi.gouv.fr" target="_blank" rel="noopener">alternance.emploi.gouv.fr</a></div></div>
+ <div class="section"><div class="row">${S.confirmReset ? `<span>Tout effacer (\xE9quipes, scores, r\xE9ponses) ?</span><button class="btn" id="resetyes" style="border-color:var(--stop);color:var(--stop)">Oui, nouvelle partie</button><button class="btn ghost" id="resetno">Annuler</button>` : `<button class="btn ghost" id="reset">Nouvelle partie</button>`}</div></div>
+ <p class="note" style="margin-top:20px">Ligne Avenir \xB7 jeu con\xE7u par Marie Frison pour la classe de 1MCVA.</p>` + foot();
+};
+function render() {
+  const st = $("#stage");
+  st.style.setProperty("--sc", STATIONS[S.st].c);
+  st.innerHTML = R[STATIONS[S.st].id]();
+}
+const CONS = {
+  prep: { intro: "Bienvenue \xE0 bord ! Pendant 1 heure, vous allez d\xE9couvrir ce qu'on peut faire apr\xE8s le bac pro et comment fonctionne Parcoursup.", steps: ["Formez des \xE9quipes de 4.", "Choisissez un nom de ligne ou de destination.", "Prenez vos cartons et une feuille par \xE9l\xE8ve."], cards: ["VRAI", "FAUX", "A", "B", "C"], pts: "Affich\xE9s \xE0 droite" },
+  bous: { intro: "Ce test donne des pistes, pas une d\xE9cision.", steps: ["Un volontaire lit chaque phrase \xE0 voix haute.", "Il r\xE9pond honn\xEAtement : \xAB Pas moi \xBB, \xAB Un peu \xBB ou \xAB Tout moi \xBB.", "\xC0 la fin, la classe d\xE9couvre ses deux directions.", "Chacun pourra refaire le test sur son t\xE9l\xE9phone."], pts: "+1 bonus volontaire" },
+  vf: { steps: ["Lisez la phrase \xE0 voix haute.", "Discutez 20 secondes dans l'\xE9quipe, \xE0 voix basse.", "Au signal, toutes les \xE9quipes l\xE8vent leur carton en m\xEAme temps.", "Le professeur r\xE9v\xE8le la r\xE9ponse."], cards: ["VRAI", "FAUX"], pts: "+1 si c'est juste" },
+  mem: { steps: ["L'\xE9quipe dont c'est le tour clique sur une formation, \xE0 gauche.", "Puis elle clique sur la description qui va avec, \xE0 droite.", "Juste : +1 et elle rejoue. Faux : c'est au tour de l'\xE9quipe suivante.", "Manche 2 : m\xEAme r\xE8gle avec les m\xE9tiers."], pts: "+1 par bonne paire" },
+  cal: { steps: ["En \xE9quipe, discutez de l'ordre des \xE9tapes (1 minute).", "Chaque \xE9quipe propose son ordre \xE0 l'oral.", "On clique les \xE9tapes dans l'ordre, de la premi\xE8re \xE0 la derni\xE8re.", "On clique sur \xAB V\xE9rifier l'ordre \xBB."], pts: "+2 pour le bon ordre" },
+  itw: { steps: ["Mettez-vous par deux.", "Le premier pose les 3 questions \xE0 l'autre pendant 2 minutes, puis on inverse.", "Notez une phrase importante de votre partenaire.", "Des volontaires pr\xE9sentent leur partenaire en 30 secondes."], pts: "+1 bonus pr\xE9sentation" },
+  pers: { steps: ["Lisez le profil de l'\xE9l\xE8ve.", "En \xE9quipe, choisissez une formation pour lui (1 minute).", "Votre porte-parole pr\xE9sente votre choix et explique pourquoi.", "Le professeur r\xE9v\xE8le une piste possible."], pts: "+2 pour le meilleur argument" },
+  dos: { steps: ["Lisez la phrase faible.", "En \xE9quipe, rendez-la forte (1 minute) : ajoutez un fait pr\xE9cis, un chiffre ou un exemple.", "Votre porte-parole lit votre phrase.", "Le professeur r\xE9v\xE8le une version forte."], pts: "+2 pour la meilleure phrase" },
+  rep: { steps: ["Lisez la situation.", "Choisissez la bonne r\xE9action en \xE9quipe (30 secondes).", "Au signal, levez votre carton."], cards: ["A", "B", "C"], pts: "+1 si c'est juste" },
+  bilan: { steps: ["Regardez le podium.", "Cochez au moins 3 actions \xE0 faire avant la terminale.", "\xC9crivez votre projet en une phrase sur votre feuille."] }
+};
+const CARDC = { VRAI: "#0E8A5F", FAUX: "#C7362F", A: "#1F4FC4", B: "#C4006B", C: "#5B3CC4", D: "#B35A00" };
+function cardsHTML(list) {
+  return `<div class="pcards">${list.map((k) => `<span class="pcard" style="background:${CARDC[k]}">${k}</span>`).join("")}</div>`;
+}
+function consHTML(id, lead) {
+  const c = CONS[id];
+  if (!c || id === "bous" && typeof BQ !== "undefined" && S.bq >= BQ.length) return `<p class="lead">${lead}</p>`;
+  const side = (c.cards ? `<span class="lab">Vous levez</span>${cardsHTML(c.cards)}` : "") + (c.pts ? `<span class="lab">Points</span><span class="pts-chip">${c.pts}</span>` : "");
+  return `${c.intro ? `<p class="intro">${c.intro}</p>` : ""}<div class="consigne ${side ? "" : "solo"}"><h4>Ce que vous devez faire</h4><ol>${c.steps.map((s) => `<li><span>${s}</span></li>`).join("")}</ol>${side ? `<div class="cons-side">${side}</div>` : ""}</div>`;
+}
+document.addEventListener("click", (e) => {
+  var _a2, _b2;
+  const b = e.target.closest("button");
+  if (!b) return;
+  const d = b.dataset;
+  ensureAudio();
+  if (d.go != null) {
+    go(+d.go);
+    return;
+  }
+  if (d.adj) {
+    const [i, p] = d.adj.split("|").map(Number);
+    addPts(i, p);
+    if (p > 0) {
+      const r = b.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top, 24, COL[i]);
+      ding();
+    }
+    return;
+  }
+  if (d.aw) {
+    const k = d.aw, i = +d.i;
+    if (S.aw[k] != null) {
+      addPts(i, -S.aw[k]);
+      delete S.aw[k];
+    } else {
+      const p = +d.pts || 1;
+      S.aw[k] = p;
+      addPts(i, p);
+      const r = b.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.top + r.height / 2, 40, COL[i]);
+      ding();
+    }
+    save();
+    render();
+    return;
+  }
+  if (d.reveal) {
+    S.rev[d.reveal] = 1;
+    save();
+    render();
+    whoosh();
+    return;
+  }
+  if (d.qnext) {
+    S.idx[d.qnext]++;
+    save();
+    render();
+    return;
+  }
+  if (d.qprev) {
+    S.idx[d.qprev]--;
+    save();
+    render();
+    return;
+  }
+  if (d.timer) {
+    setTimer(+d.timer, true);
+    return;
+  }
+  if (d.delteam != null) {
+    S.teams.splice(+d.delteam, 1);
+    S.aw = {};
+    save();
+    drawBoard();
+    render();
+    return;
+  }
+  if (d.bans != null) {
+    S.bans[S.bq] = +d.bans;
+    S.bq++;
+    tone(520 + S.bq * 40, 0, 0.08, "triangle", 0.1);
+    if (S.bq >= BQ.length) {
+      fanfare();
+      burst(innerWidth / 2, innerHeight / 3, 100);
+    }
+    save();
+    render();
+    return;
+  }
+  if (d.mr != null) {
+    S.mr = +d.mr;
+    save();
+    render();
+    return;
+  }
+  if (d.ma != null || d.mb != null) {
+    const m = S.mems[S.mr], D = DECKS[S.mr];
+    if (d.ma != null) m.a = +d.ma;
+    else m.b = +d.mb;
+    if (m.a != null && m.b != null) {
+      const t = m.turn % S.teams.length;
+      if (m.a === m.b) {
+        m.done[m.a] = t;
+        addPts(t, 1);
+        ding();
+        const r = b.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height / 2, 40, COL[t]);
+        m.a = m.b = null;
+        if (Object.keys(m.done).length === D.length) setTimeout(() => {
+          fanfare();
+          burst(innerWidth / 2, innerHeight / 3, 120);
+        }, 200);
+      } else {
+        const a = m.a, bb = m.b;
+        m.a = m.b = null;
+        m.turn++;
+        buzz(0.4);
+        save();
+        render();
+        (_a2 = document.querySelector(`[data-ma="${a}"]`)) == null ? void 0 : _a2.classList.add("err");
+        (_b2 = document.querySelector(`[data-mb="${bb}"]`)) == null ? void 0 : _b2.classList.add("err");
+        return;
+      }
+    }
+    save();
+    render();
+    return;
+  }
+  if (d.cal != null) {
+    S.cal.picked.push(+d.cal);
+    tone(600, 0, 0.06, "triangle", 0.1);
+    save();
+    render();
+    return;
+  }
+  switch (b.id) {
+    case "startgame":
+      S.started = 1;
+      save();
+      $("#splash").hidden = true;
+      $("#rules").hidden = false;
+      chime();
+      burst(innerWidth / 2, innerHeight / 3, 120);
+      break;
+    case "showrules":
+      $("#rules").hidden = false;
+      break;
+    case "rulesgo":
+      $("#rules").hidden = true;
+      S.rulesSeen = 1;
+      save();
+      burst(innerWidth / 2, innerHeight / 3, 60);
+      ding();
+      break;
+    case "home":
+      $("#splash").hidden = false;
+      break;
+    case "addteam":
+      S.teams.push({ name: "Ligne " + (S.teams.length + 1), score: 0 });
+      save();
+      drawBoard();
+      render();
+      break;
+    case "bback":
+      if (S.bq > 0) {
+        S.bq--;
+        save();
+        render();
+      }
+      break;
+    case "bagain":
+      S.bq = 0;
+      S.bans = [];
+      S.bRun = (S.bRun || 0) + 1;
+      save();
+      render();
+      break;
+    case "skipturn":
+      {
+        const m = S.mems[S.mr];
+        m.turn++;
+        m.a = m.b = null;
+      }
+      save();
+      render();
+      break;
+    case "memreset":
+      S.mems[S.mr] = newMem(S.mr);
+      save();
+      render();
+      break;
+    case "itwdraw":
+      S.itw = shuffle(ITW.map((_, i) => i)).slice(0, 3);
+      S.itwRun = (S.itwRun || 0) + 1;
+      save();
+      render();
+      whoosh();
+      break;
+    case "calundo":
+      S.cal.picked.pop();
+      save();
+      render();
+      break;
+    case "calreset":
+      S.cal = { perm: shuffle(CAL.map((_, i) => i)), picked: [], checked: false };
+      S.calRun = (S.calRun || 0) + 1;
+      save();
+      render();
+      break;
+    case "calcheck": {
+      S.cal.checked = true;
+      const ok = S.cal.picked.every((i, p) => i === p);
+      save();
+      render();
+      if (ok) {
+        fanfare();
+        burst(innerWidth / 2, innerHeight / 3, 100);
+      } else whoosh();
+      break;
+    }
+    case "reset":
+      S.confirmReset = 1;
+      render();
+      break;
+    case "resetno":
+      S.confirmReset = 0;
+      render();
+      break;
+    case "resetyes":
+      S = blank();
+      save();
+      drawSteps();
+      drawBoard();
+      render();
+      setTimer(STATIONS[0].min * 60);
+      $("#splash").hidden = false;
+      break;
+  }
+});
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.dataset.road != null) {
+    S.road[t.dataset.road] = t.checked;
+    save();
+    if (t.checked) ding();
+  }
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.team != null) {
+    S.teams[+t.dataset.team].name = t.value || "Ligne " + (+t.dataset.team + 1);
+    save();
+    drawBoard();
+  }
+});
+const cv = $("#fx"), cx = cv.getContext("2d");
+let parts = [], raf = null;
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function fit() {
+  cv.width = innerWidth * devicePixelRatio;
+  cv.height = innerHeight * devicePixelRatio;
+  cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+addEventListener("resize", fit);
+fit();
+const FXC = ["#E4007C", "#FFC72C", "#1F5BD8", "#00A88F", "#F28C00", "#7B4BDB"];
+function burst(x, y, n, col) {
+  if (RM) return;
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 8;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 5, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4, w: 6 + Math.random() * 7, h: 4 + Math.random() * 5, c: col && Math.random() < 0.5 ? col : FXC[k % FXC.length], l: 90 + Math.random() * 40, round: Math.random() < 0.3 });
+  }
+  if (!raf) loop();
+}
+function loop() {
+  cx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter((p) => p.l > 0);
+  for (const p of parts) {
+    p.vy += 0.28;
+    p.vx *= 0.985;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.r += p.vr;
+    p.l--;
+    cx.save();
+    cx.globalAlpha = Math.min(1, p.l / 30);
+    cx.translate(p.x, p.y);
+    cx.rotate(p.r);
+    cx.fillStyle = p.c;
+    if (p.round) {
+      cx.beginPath();
+      cx.arc(0, 0, p.h, 0, 6.28);
+      cx.fill();
+    } else cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cx.restore();
+  }
+  raf = parts.length ? requestAnimationFrame(loop) : (cx.clearRect(0, 0, innerWidth, innerHeight), null);
+}
+function ensureAudio() {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+  } catch (e) {
+  }
+}
+function tone(f, d, len, type, vol) {
+  try {
+    ensureAudio();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || "sine";
+    o.frequency.value = f;
+    o.connect(g);
+    g.connect(ac.destination);
+    const t = ac.currentTime + d;
+    g.gain.setValueAtTime(vol || 0.18, t);
+    g.gain.exponentialRampToValueAtTime(1e-3, t + len);
+    o.start(t);
+    o.stop(t + len + 0.02);
+  } catch (e) {
+  }
+}
+function ding() {
+  tone(988, 0, 0.15, "triangle");
+  tone(1319, 0.09, 0.3, "triangle");
+}
+function whoosh() {
+  tone(523, 0, 0.12, "square", 0.06);
+  tone(784, 0.08, 0.2, "square", 0.06);
+}
+function chime() {
+  [659, 831, 988].forEach((f, k) => tone(f, k * 0.28, 0.5, "sine", 0.16));
+}
+function buzz(len) {
+  tone(150, 0, len || 0.8, "sawtooth", 0.12);
+}
+function fanfare() {
+  [523, 659, 784, 1047].forEach((f, k) => tone(f, k * 0.12, k === 3 ? 0.5 : 0.18, "triangle", 0.16));
+}
+$("#map").innerHTML = STATIONS.map((x, i) => `<li><i style="border-color:${x.c}"></i>${x.t}<em>${x.min} min</em></li>`).join("");
+$("#map").style.gridTemplateColumns = `repeat(${STATIONS.length},minmax(90px,1fr))`;
+$("#rulescards").innerHTML = cardsHTML(["VRAI", "FAUX", "A", "B", "C"]);
+function start(data) {
+  var _a2, _b2, _c2;
+  window.__ok = true;
+  S = data && data.S || load() || blank();
+  drawSteps();
+  drawBoard();
+  render();
+  setTimer(STATIONS[S.st].min * 60);
+  $("#splash").hidden = !!S.started;
+  $("#rules").hidden = !(S.started && !S.rulesSeen);
+  (_c2 = (_b2 = (_a2 = window.claude) == null ? void 0 : _a2.hot) == null ? void 0 : _b2.snapshot) == null ? void 0 : _c2.call(_b2, () => ({ S }));
+}
+((_b = (_a = window.claude) == null ? void 0 : _a.hot) == null ? void 0 : _b.ready) ? window.claude.hot.ready(start) : start((_e = (_d = (_c = window.claude) == null ? void 0 : _c.hot) == null ? void 0 : _d.data) != null ? _e : {});
+</script>
+
+</body>
+</html>
